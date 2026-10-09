@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: erp_informal_db
+    env_file: .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  web:
+    build: .
+    container_name: erp_informal_web
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-9000}:9000"
+    # Desarrollo: aplica migraciones y levanta el servidor con recarga.
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:9000"
+    volumes:
+      - .:/app
+    restart: unless-stopped
+
+volumes:
+  pgdata:

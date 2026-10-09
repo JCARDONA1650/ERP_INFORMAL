@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Iniciar sesión · INFORMAL ERP</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --red: #c0392b; --red-hover: #e04535;
+      --gold: #c9a84c; --gold-lt: #e8c46a;
+      --bg: #0b0f14; --bg-card: #13181f; --bg-hdr: #0f131a; --bg-input: #0c1017;
+      --text: #e8edf4; --muted: #5a6678;
+      --border: rgba(255,255,255,.08); --border-gold: rgba(201,168,76,.28);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      background:
+        radial-gradient(ellipse 900px 600px at 15% -10%, rgba(192,57,43,.07), transparent),
+        radial-gradient(ellipse 700px 500px at 85% 110%, rgba(201,168,76,.05), transparent),
+        var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px; min-height: 100vh;
+      font-family: 'Inter', system-ui, sans-serif; color: var(--text);
+    }
+    .login-card {
+      width: 100%; max-width: 430px; background: var(--bg-card);
+      border: 1px solid var(--border-gold); border-radius: 20px; overflow: hidden;
+      box-shadow: 0 30px 70px rgba(0,0,0,.55), 0 0 0 1px rgba(201,168,76,.06);
+    }
+    .login-card::before {
+      content: ''; display: block; height: 2px;
+      background: linear-gradient(90deg, var(--red) 0%, var(--gold) 55%, transparent 100%);
+    }
+    .login-header {
+      background: var(--bg-hdr); border-bottom: 1px solid rgba(255,255,255,.05);
+      padding: 28px 28px 22px; text-align: center;
+    }
+    .brand-name { font-size: 24px; font-weight: 900; letter-spacing: -.03em; color: #fff; margin: 0; }
+    .brand-name span { color: var(--gold); }
+    .brand-sub {
+      font-size: 10.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+      color: var(--muted); margin: 6px 0 0;
+    }
+    .login-body { padding: 26px 28px 30px; }
+    .alert-login {
+      background: rgba(192,57,43,.13); border-left: 3px solid var(--red); border-radius: 10px;
+      color: #fca5a5; font-size: 13px; font-weight: 600; padding: .65rem .9rem; margin-bottom: 18px;
+    }
+    .form-label {
+      font-size: 10.5px !important; font-weight: 700 !important; letter-spacing: .10em !important;
+      text-transform: uppercase !important; color: var(--muted) !important; margin-bottom: 7px !important;
+    }
+    .input-wrap { position: relative; }
+    .input-wrap .inp-icon {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      font-size: 16px; color: #3d4f62; pointer-events: none; line-height: 1;
+    }
+    .form-control {
+      background: var(--bg-input) !important; border: 1px solid var(--border) !important;
+      border-radius: 11px !important; color: var(--text) !important;
+      font-size: 14px !important; font-weight: 500 !important;
+      height: 48px !important; padding: 0 46px !important;
+      transition: border-color .18s, box-shadow .18s !important;
+    }
+    .form-control:focus {
+      border-color: var(--gold) !important; box-shadow: 0 0 0 3px rgba(201,168,76,.12) !important;
+      background: #0a0e14 !important; color: #fff !important;
+    }
+    .form-control::placeholder { color: #2c3844 !important; }
+    .toggle-pass {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      background: transparent; border: none; cursor: pointer; color: #3d4f62;
+      font-size: 16px; padding: 4px; border-radius: 6px; display: flex; align-items: center;
+    }
+    .toggle-pass:hover { color: #8a96a4; }
+    .btn-login {
+      width: 100%; height: 50px; background: var(--red); border: none; border-radius: 11px;
+      color: #fff; font-size: 14px; font-weight: 800; letter-spacing: .06em;
+      text-transform: uppercase; cursor: pointer; margin-top: 4px;
+      transition: background .16s, transform .12s;
+    }
+    .btn-login:hover { background: var(--red-hover); }
+    .btn-login:active { transform: scale(.985); }
+    @media (max-width: 420px) {
+      .login-body { padding: 20px 20px 24px; }
+      .login-header { padding: 22px 20px 18px; }
+      .brand-name { font-size: 21px; }
+    }
+  </style>
+</head>
+<body>
+
+  <main class="login-card" role="main">
+    <header class="login-header">
+      <h1 class="brand-name">INFORMAL <span>ERP</span></h1>
+      <p class="brand-sub">Asistencia y nómina para construcción</p>
+    </header>
+
+    <section class="login-body">
+      {% if form.errors %}
+        <div class="alert-login" role="alert">
+          <i class="bi bi-exclamation-circle me-2"></i>Usuario o contraseña inválidos.
+        </div>
+      {% endif %}
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
+
+        <div class="mb-3">
+          <label class="form-label" for="id_username">Usuario</label>
+          <div class="input-wrap">
+            <i class="bi bi-person inp-icon" aria-hidden="true"></i>
+            <input id="id_username" type="text" name="username" class="form-control"
+                   placeholder="Ingresa tu usuario" required autofocus autocomplete="username">
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label" for="id_password">Contraseña</label>
+          <div class="input-wrap">
+            <i class="bi bi-lock inp-icon" aria-hidden="true"></i>
+            <input id="id_password" type="password" name="password" class="form-control"
+                   placeholder="••••••••" required autocomplete="current-password">
+            <button type="button" class="toggle-pass" id="toggleBtn" aria-label="Mostrar contraseña">
+              <i class="bi bi-eye" id="eyeIcon" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-login">Ingresar</button>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    document.getElementById('toggleBtn').addEventListener('click', function () {
+      const inp = document.getElementById('id_password');
+      const ico = document.getElementById('eyeIcon');
+      const show = inp.type === 'password';
+      inp.type = show ? 'text' : 'password';
+      ico.className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
+      this.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña');
+    });
+  </script>
+</body>
+</html>

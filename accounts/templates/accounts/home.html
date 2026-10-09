@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Inicio · INFORMAL ERP</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+           background: #0b0f14; color: #e8edf4; font-family: system-ui, sans-serif; padding: 24px; }
+    .card { background: #13181f; border: 1px solid rgba(201,168,76,.28); border-radius: 20px;
+            padding: 32px; max-width: 460px; width: 100%; text-align: center; }
+    h1 { margin: 0 0 8px; font-size: 22px; }
+    h1 span { color: #c9a84c; }
+    p { color: #8a96a4; font-size: 14px; }
+    button { margin-top: 12px; height: 44px; padding: 0 24px; border: none; border-radius: 11px;
+             background: #c0392b; color: #fff; font-weight: 700; cursor: pointer; }
+    button:hover { background: #e04535; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>INFORMAL <span>ERP</span></h1>
+    <p>Sesión iniciada como <strong>{{ user.get_username }}</strong>.</p>
+    <form method="post" action="{% url 'logout' %}">
+      {% csrf_token %}
+      <button type="submit">Cerrar sesión</button>
+    </form>
+  </main>
+</body>
+</html>
