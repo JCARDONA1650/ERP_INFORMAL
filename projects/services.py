@@ -1,0 +1,39 @@
+"""Reglas de negocio de proyectos: acceso y zona de obra."""
+import math
+from decimal import Decimal
+
+from .models import Project
+
+EARTH_RADIUS_M = 6_371_000
+
+
+def haversine_m(lat1, lon1, lat2, lon2) -> float:
+    """Distancia en metros entre dos coordenadas (fórmula de Haversine)."""
+    p1, p2 = math.radians(float(lat1)), math.radians(float(lat2))
+    dphi = p2 - p1
+    dlmb = math.radians(float(lon2) - float(lon1))
+    a = math.sin(dphi / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dlmb / 2) ** 2
+    return 2 * EARTH_RADIUS_M * math.asin(math.sqrt(a))
+
+
+def is_in_zone(project: Project, latitude, longitude):
+    """True/False si hay zona y coordenadas; None si no se puede determinar.
+    Estar fuera de la zona no bloquea la marcación: solo la deja para revisión."""
+    site = getattr(project, "site", None)
+    if site is None or latitude is None or longitude is None:
+        return None
+    distance = haversine_m(site.latitude, site.longitude, latitude, longitude)
+    return distance <= site.radius_m
+
+
+def user_can_access_project(user, project: Project) -> bool:
+    if not user.is_authenticated:
+        return False
+    return user.is_superuser or project.supervisors.filter(pk=user.pk).exists()
+
+
+def projects_for(user):
+    """Proyectos que el usuario puede ver (sin N+1: usa los M2M directos)."""
+    if user.is_superuser:
+        return Project.objects.all()
+    return Project.objects.filter(supervisors=user)
