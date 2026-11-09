@@ -1,0 +1,115 @@
+<header class="page-head">
+  <h1>Proyectos</h1>
+  <p class="muted">Los proyectos no se borran: se desactivan. La zona de obra define si una marcación queda dentro o fuera.</p>
+</header>
+
+<div class="form-row" style="margin-bottom: 1rem">
+  <button class="btn btn--primary" type="button" (click)="openNew()">Nuevo proyecto</button>
+</div>
+
+@if (error(); as message) {
+  <p class="alert" role="alert">{{ message }}</p>
+}
+
+@if (formOpen()) {
+  <form class="panel project-form" aria-label="Formulario de proyecto" [formGroup]="form" (ngSubmit)="save()">
+    <h3>{{ editing() ? 'Editar proyecto' : 'Nuevo proyecto' }}</h3>
+
+    <div class="form-row">
+      <label class="form-row__grow">
+        Nombre
+        <input type="text" maxlength="120" formControlName="name" />
+      </label>
+      <label>
+        Valor del contrato
+        <input type="number" step="0.01" min="0" formControlName="contract_value" />
+      </label>
+      <label>
+        Moneda
+        <select formControlName="contract_currency">
+          <option value="USD">USD</option>
+          <option value="COP">COP</option>
+        </select>
+      </label>
+    </div>
+
+    <fieldset class="block">
+      <legend>Zona de obra</legend>
+      <label class="check"><input type="checkbox" formControlName="hasSite" /> Definir zona de obra</label>
+      @if (form.controls.hasSite.value) {
+        <div class="form-row">
+          <label>Latitud <input type="number" step="0.000001" formControlName="latitude" /></label>
+          <label>Longitud <input type="number" step="0.000001" formControlName="longitude" /></label>
+          <label>Radio (m) <input type="number" min="10" max="5000" formControlName="radius_m" /></label>
+          <button class="btn btn--ghost btn--sm" type="button" [disabled]="locating()" (click)="useMyLocation()">
+            {{ locating() ? 'Ubicando…' : 'Usar mi ubicación' }}
+          </button>
+          @if (mapsUrl(); as url) {
+            <a class="btn btn--ghost btn--sm" [href]="url" target="_blank" rel="noopener noreferrer">Ver en el mapa</a>
+          }
+        </div>
+      }
+    </fieldset>
+
+    <fieldset class="block">
+      <legend>Supervisores</legend>
+      @for (s of supervisors(); track s.id) {
+        <label class="check">
+          <input type="checkbox" [checked]="isChecked('supervisors', s.id)" (change)="toggle('supervisors', s.id)" />
+          {{ s.full_name }}
+        </label>
+      } @empty {
+        <p class="muted">No hay usuarios con rol Supervisor. Créalos en el administrador y asígnales el grupo «Supervisor».</p>
+      }
+    </fieldset>
+
+    <fieldset class="block">
+      <legend>Trabajadores asignados ({{ selectedEmployees().length }})</legend>
+      <input type="text" placeholder="Filtrar por nombre…" aria-label="Filtrar trabajadores" [value]="employeeFilter()" (input)="setFilter($event)" />
+      <div class="checklist">
+        @for (e of visibleEmployees(); track e.id) {
+          <label class="check">
+            <input type="checkbox" [checked]="isChecked('employees', e.id)" (change)="toggle('employees', e.id)" />
+            {{ e.full_name }}@if (!e.active) { <span class="badge">Inactivo</span> }
+          </label>
+        } @empty {
+          <p class="muted">Sin trabajadores para mostrar.</p>
+        }
+      </div>
+    </fieldset>
+
+    <div class="form-row">
+      <button class="btn btn--primary" type="submit" [disabled]="saving()">Guardar</button>
+      <button class="btn btn--ghost" type="button" (click)="closeForm()">Cancelar</button>
+    </div>
+    @if (formError(); as message) {
+      <p class="alert" style="margin: 0.75rem 0 0" role="alert">{{ message }}</p>
+    }
+  </form>
+}
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Proyecto</th><th class="num">Contrato</th><th>Zona</th><th class="num">Supervisores</th><th class="num">Trabajadores</th><th>Estado</th><th></th></tr>
+    </thead>
+    <tbody>
+      @for (p of projects(); track p.id) {
+        <tr>
+          <td>{{ p.name }}</td>
+          <td class="num">{{ money(p.contract_value, p.contract_currency) }}</td>
+          <td>{{ p.site ? p.site.radius_m + ' m' : 'Sin zona' }}</td>
+          <td class="num">{{ p.supervisors.length }}</td>
+          <td class="num">{{ p.employees.length }}</td>
+          <td>@if (p.active) { <span class="badge badge--ok">Activo</span> } @else { <span class="badge">Inactivo</span> }</td>
+          <td class="row-actions">
+            <button class="btn btn--ghost btn--sm" type="button" (click)="edit(p)">Editar</button>
+            <button class="btn btn--ghost btn--sm" type="button" (click)="toggleActive(p)">{{ p.active ? 'Desactivar' : 'Activar' }}</button>
+          </td>
+        </tr>
+      } @empty {
+        <tr><td colspan="7" class="empty">{{ loading() ? 'Cargando…' : 'No hay proyectos.' }}</td></tr>
+      }
+    </tbody>
+  </table>
+</div>

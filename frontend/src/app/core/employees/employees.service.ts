@@ -41,6 +41,7 @@ export interface EmployeeFilters {
   search?: string;
   active?: 'true' | 'false' | '';
   page?: number;
+  pageSize?: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -53,6 +54,7 @@ export class EmployeesService {
     if (f.search?.trim()) params = params.set('search', f.search.trim());
     if (f.active) params = params.set('active', f.active);
     if (f.page && f.page > 1) params = params.set('page', f.page);
+    if (f.pageSize) params = params.set('page_size', f.pageSize);
     return this.http.get<Page<Employee>>(this.base, { params });
   }
 

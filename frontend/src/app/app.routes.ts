@@ -34,6 +34,13 @@ export const routes: Routes = [
           import('./features/attendance/attendance-list').then((m) => m.AttendanceList),
       },
       {
+        path: 'proyectos',
+        pathMatch: 'full',
+        canActivate: [roleGuard('Administrador', 'RRHH')],
+        title: 'Proyectos · INFORMAL ERP',
+        loadComponent: () => import('./features/projects/projects-page').then((m) => m.ProjectsPage),
+      },
+      {
         path: 'proyectos/qr',
         canActivate: [roleGuard('Supervisor', 'Administrador', 'RRHH')],
         title: 'QR de obra · INFORMAL ERP',
