@@ -1,0 +1,34 @@
+<header class="page-head no-print">
+  <h1>QR de marcación</h1>
+  <p class="muted">El código cambia cada día. Muéstralo o imprímelo en la obra para que el personal marque.</p>
+</header>
+
+@if (error(); as message) {
+  <p class="alert no-print" role="alert">{{ message }}</p>
+}
+
+<div class="layout">
+  <ul class="list no-print">
+    @for (p of projects(); track p.id) {
+      <li>
+        <button type="button" class="list__item" [class.is-active]="selected()?.id === p.id" (click)="show(p)">
+          {{ p.name }}
+        </button>
+      </li>
+    } @empty {
+      <li class="muted">{{ loading() ? 'Cargando…' : 'No tienes proyectos activos asignados.' }}</li>
+    }
+  </ul>
+
+  @if (selected(); as project) {
+    <section class="qr" aria-label="QR de {{ project.name }}">
+      <h2>{{ project.name }}</h2>
+      @if (qrUrl(); as url) {
+        <img [src]="url" alt="Código QR de marcación de {{ project.name }}" />
+        <button class="btn btn--primary no-print" type="button" (click)="print()">Imprimir</button>
+      } @else {
+        <p class="muted">Generando…</p>
+      }
+    </section>
+  }
+</div>

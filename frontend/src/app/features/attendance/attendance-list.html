@@ -1,0 +1,145 @@
+<header class="page-head">
+  <h1>Asistencia</h1>
+</header>
+
+<form class="filters" [formGroup]="filters" (ngSubmit)="search()">
+  <label>
+    Proyecto
+    <select formControlName="project">
+      <option [ngValue]="null">Todos</option>
+      @for (p of projects(); track p.id) {
+        <option [ngValue]="p.id">{{ p.name }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    Desde
+    <input type="date" formControlName="date_from" />
+  </label>
+  <label>
+    Hasta
+    <input type="date" formControlName="date_to" />
+  </label>
+  <label class="filters__check">
+    <input type="checkbox" formControlName="needs_review" />
+    Solo pendientes de revisión
+  </label>
+  <button class="btn btn--primary" type="submit">Buscar</button>
+</form>
+
+@if (error(); as message) {
+  <p class="alert" role="alert">{{ message }}</p>
+}
+
+@if (selected(); as row) {
+  <section class="detail" aria-label="Detalle de la jornada">
+    <div class="detail__head">
+      <div>
+        <h2>{{ row.employee.full_name }}</h2>
+        <p class="muted">{{ row.project.name }} · {{ row.date | date: 'dd/MM/yyyy' }}</p>
+      </div>
+      <button class="btn btn--ghost" type="button" (click)="close()">Cerrar</button>
+    </div>
+
+    <div class="detail__body">
+      <div class="detail__photo">
+        @switch (photoState()) {
+          @case ('loading') { <p class="muted">Cargando foto…</p> }
+          @case ('none') { <p class="muted">Sin foto de constancia.</p> }
+          @case ('error') { <p class="muted">No se pudo cargar la foto.</p> }
+          @default {
+            @if (photoUrl(); as url) {
+              <img [src]="url" alt="Foto de constancia de {{ row.employee.full_name }}" />
+            }
+          }
+        }
+      </div>
+
+      <dl class="detail__facts">
+        <dt>Ingreso</dt><dd>{{ row.check_in ? (row.check_in | date: 'HH:mm') : '—' }}</dd>
+        <dt>Salida</dt><dd>{{ row.check_out ? (row.check_out | date: 'HH:mm') : '—' }}</dd>
+        <dt>Horas netas</dt><dd>{{ hhmm(row.worked_minutes) }}</dd>
+        <dt>Ubicación</dt>
+        <dd>{{ row.in_zone === null ? 'Sin ubicación' : row.in_zone ? 'Dentro de la zona' : 'Fuera de la zona' }}</dd>
+        @if (row.manual_minutes !== null) {
+          <dt>Ajuste manual</dt><dd>{{ row.manual_note }}</dd>
+        }
+        @if (row.reviewed_by) {
+          <dt>Revisó</dt><dd>{{ row.reviewed_by }} · {{ row.reviewed_at | date: 'dd/MM/yyyy HH:mm' }}</dd>
+        }
+      </dl>
+    </div>
+
+    @if (actionError(); as message) {
+      <p class="alert" role="alert">{{ message }}</p>
+    }
+
+    <div class="detail__actions">
+      @if (row.needs_review) {
+        <button class="btn btn--primary" type="button" [disabled]="busy()" (click)="review()">
+          Marcar como revisada
+        </button>
+      }
+    </div>
+
+    @if (canAdjust()) {
+      <form class="adjust" [formGroup]="adjustForm" (ngSubmit)="adjust()">
+        <h3>Ajustar horas netas</h3>
+        <label>
+          Horas netas (HH:MM)
+          <input type="time" formControlName="time" />
+        </label>
+        <label>
+          Motivo
+          <input type="text" formControlName="reason" maxlength="200" />
+        </label>
+        <button class="btn btn--ghost" type="submit" [disabled]="busy()">Guardar ajuste</button>
+      </form>
+    }
+  </section>
+}
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha</th><th>Trabajador</th><th>Proyecto</th>
+        <th>Ingreso</th><th>Salida</th><th>Horas</th><th>Estado</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of data()?.results; track row.id) {
+        <tr [class.is-selected]="selected()?.id === row.id">
+          <td>{{ row.date | date: 'dd/MM/yyyy' }}</td>
+          <td>{{ row.employee.full_name }}</td>
+          <td>{{ row.project.name }}</td>
+          <td>{{ row.check_in ? (row.check_in | date: 'HH:mm') : '—' }}</td>
+          <td>{{ row.check_out ? (row.check_out | date: 'HH:mm') : '—' }}</td>
+          <td>{{ hhmm(row.worked_minutes) }}</td>
+          <td>
+            @if (row.needs_review) {
+              <span class="badge badge--warn">Pendiente</span>
+            } @else if (row.reviewed_by) {
+              <span class="badge badge--ok">Revisada</span>
+            } @else {
+              <span class="badge">OK</span>
+            }
+          </td>
+          <td><button class="btn btn--ghost btn--sm" type="button" (click)="select(row)">Ver</button></td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="8" class="empty">{{ loading() ? 'Cargando…' : 'No hay jornadas con esos filtros.' }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+@if (totalPages() > 1) {
+  <nav class="pager" aria-label="Paginación">
+    <button class="btn btn--ghost btn--sm" type="button" [disabled]="page() <= 1" (click)="goTo(page() - 1)">Anterior</button>
+    <span>Página {{ page() }} de {{ totalPages() }}</span>
+    <button class="btn btn--ghost btn--sm" type="button" [disabled]="page() >= totalPages()" (click)="goTo(page() + 1)">Siguiente</button>
+  </nav>
+}

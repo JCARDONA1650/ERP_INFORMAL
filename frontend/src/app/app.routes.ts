@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 
-import { authGuard, guestGuard } from './core/auth/auth.guards';
+import { authGuard, guestGuard, roleGuard } from './core/auth/auth.guards';
 
 export const routes: Routes = [
   {
@@ -25,6 +25,19 @@ export const routes: Routes = [
         path: 'inicio',
         title: 'Inicio · INFORMAL ERP',
         loadComponent: () => import('./features/home/home').then((m) => m.Home),
+      },
+      {
+        path: 'asistencia',
+        canActivate: [roleGuard('Supervisor', 'Administrador', 'RRHH')],
+        title: 'Asistencia · INFORMAL ERP',
+        loadComponent: () =>
+          import('./features/attendance/attendance-list').then((m) => m.AttendanceList),
+      },
+      {
+        path: 'proyectos/qr',
+        canActivate: [roleGuard('Supervisor', 'Administrador', 'RRHH')],
+        title: 'QR de obra · INFORMAL ERP',
+        loadComponent: () => import('./features/projects/project-qr').then((m) => m.ProjectQr),
       },
       {
         path: 'forbidden',

@@ -77,3 +77,21 @@ body {
     cursor: not-allowed;
   }
 }
+
+/* Impresión (QR del proyecto): oculta la navegación y los controles. */
+@media print {
+  .shell__side,
+  .shell__top,
+  .no-print {
+    display: none !important;
+  }
+
+  .shell {
+    display: block;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+  }
+}
