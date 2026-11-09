@@ -40,6 +40,18 @@ export const routes: Routes = [
         loadComponent: () => import('./features/projects/project-qr').then((m) => m.ProjectQr),
       },
       {
+        path: 'nomina',
+        canActivate: [roleGuard('Administrador', 'RRHH')],
+        title: 'Nómina · INFORMAL ERP',
+        loadComponent: () => import('./features/payroll/period-list').then((m) => m.PeriodList),
+      },
+      {
+        path: 'nomina/:id',
+        canActivate: [roleGuard('Administrador', 'RRHH')],
+        title: 'Periodo de nómina · INFORMAL ERP',
+        loadComponent: () => import('./features/payroll/period-detail').then((m) => m.PeriodDetail),
+      },
+      {
         path: 'forbidden',
         title: 'Sin permisos · INFORMAL ERP',
         loadComponent: () => import('./features/errors/forbidden').then((m) => m.Forbidden),

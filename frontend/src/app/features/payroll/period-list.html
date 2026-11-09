@@ -1,0 +1,78 @@
+<header class="page-head">
+  <h1>Nómina</h1>
+  <p class="muted">Periodos de pago. Un periodo cerrado ya no se puede modificar.</p>
+</header>
+
+<form class="panel form-row" [formGroup]="form" (ngSubmit)="create()">
+  <label>
+    Desde
+    <input type="date" formControlName="start_date" />
+  </label>
+  <label>
+    Hasta
+    <input type="date" formControlName="end_date" />
+  </label>
+  <label>
+    Proyecto (opcional)
+    <select formControlName="project">
+      <option [ngValue]="null">Todos los proyectos</option>
+      @for (p of projects(); track p.id) {
+        <option [ngValue]="p.id">{{ p.name }}</option>
+      }
+    </select>
+  </label>
+  <button class="btn btn--primary" type="submit" [disabled]="creating()">Crear periodo</button>
+  @if (createError(); as message) {
+    <p class="alert form-row__grow" role="alert">{{ message }}</p>
+  }
+</form>
+
+<div class="form-row" style="margin-bottom: 1rem">
+  <label>
+    Estado
+    <select [formControl]="filter" (change)="applyFilter()">
+      <option value="">Todos</option>
+      <option value="OPEN">Abiertos</option>
+      <option value="CLOSED">Cerrados</option>
+    </select>
+  </label>
+</div>
+
+@if (error(); as message) {
+  <p class="alert" role="alert">{{ message }}</p>
+}
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Periodo</th><th>Proyecto</th><th>Estado</th><th>Cerrado por</th><th></th></tr>
+    </thead>
+    <tbody>
+      @for (p of data()?.results; track p.id) {
+        <tr>
+          <td>{{ p.start_date | date: 'dd/MM/yyyy' }} → {{ p.end_date | date: 'dd/MM/yyyy' }}</td>
+          <td>{{ p.project_name ?? 'Todos' }}</td>
+          <td>
+            @if (p.status === 'OPEN') {
+              <span class="badge badge--warn">Abierto</span>
+            } @else {
+              <span class="badge badge--ok">Cerrado</span>
+            }
+          </td>
+          <td>{{ p.closed_by ?? '—' }}</td>
+          <td><a class="btn btn--ghost btn--sm" [routerLink]="['/nomina', p.id]">Abrir</a></td>
+        </tr>
+      } @empty {
+        <tr><td colspan="5" class="empty">{{ loading() ? 'Cargando…' : 'No hay periodos.' }}</td></tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+@if (totalPages() > 1) {
+  <nav class="pager" aria-label="Paginación">
+    <button class="btn btn--ghost btn--sm" type="button" [disabled]="page() <= 1" (click)="goTo(page() - 1)">Anterior</button>
+    <span>Página {{ page() }} de {{ totalPages() }}</span>
+    <button class="btn btn--ghost btn--sm" type="button" [disabled]="page() >= totalPages()" (click)="goTo(page() + 1)">Siguiente</button>
+  </nav>
+}
