@@ -64,6 +64,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/reports/reports-page').then((m) => m.ReportsPage),
       },
       {
+        path: 'trabajadores',
+        canActivate: [roleGuard('Administrador', 'RRHH')],
+        title: 'Trabajadores · INFORMAL ERP',
+        loadComponent: () => import('./features/employees/employees-page').then((m) => m.EmployeesPage),
+      },
+      {
         path: 'forbidden',
         title: 'Sin permisos · INFORMAL ERP',
         loadComponent: () => import('./features/errors/forbidden').then((m) => m.Forbidden),

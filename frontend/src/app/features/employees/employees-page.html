@@ -1,0 +1,159 @@
+<header class="page-head">
+  <h1>Trabajadores</h1>
+  <p class="muted">Los trabajadores no se borran: se desactivan. La tarifa cambia por fecha de vigencia.</p>
+</header>
+
+<form class="panel form-row" [formGroup]="filters" (ngSubmit)="search()">
+  <label class="form-row__grow">
+    Buscar (nombre o documento)
+    <input type="text" formControlName="search" />
+  </label>
+  <label>
+    Estado
+    <select formControlName="active">
+      <option value="">Todos</option>
+      <option value="true">Activos</option>
+      <option value="false">Inactivos</option>
+    </select>
+  </label>
+  <button class="btn btn--primary" type="submit">Buscar</button>
+  <button class="btn btn--ghost" type="button" (click)="openNew()">Nuevo trabajador</button>
+</form>
+
+@if (error(); as message) {
+  <p class="alert" role="alert">{{ message }}</p>
+}
+
+@if (formOpen()) {
+  <form class="panel form-row employee-form" aria-label="Formulario de trabajador" [formGroup]="form" (ngSubmit)="save()">
+    <h3 style="flex-basis: 100%">{{ editing() ? 'Editar trabajador' : 'Nuevo trabajador' }}</h3>
+    <label class="form-row__grow">
+      Nombre completo
+      <input type="text" maxlength="150" formControlName="full_name" />
+    </label>
+    <label>
+      Documento (opcional)
+      <input type="text" maxlength="50" formControlName="document_id" />
+    </label>
+    <label>
+      Cargo
+      <input type="text" maxlength="100" formControlName="position" />
+    </label>
+    <label>
+      Tipo de pago
+      <select formControlName="pay_type">
+        <option value="hourly">Por hora</option>
+        <option value="daily">Por día</option>
+      </select>
+    </label>
+    <label>
+      Moneda
+      <select formControlName="currency">
+        <option value="USD">USD</option>
+        <option value="COP">COP</option>
+      </select>
+    </label>
+    @if (form.controls.pay_type.value === 'daily') {
+      <label>
+        Valor por día
+        <input type="number" step="0.01" min="0" formControlName="daily_rate" />
+      </label>
+    } @else if (!editing()) {
+      <label>
+        Tarifa por hora inicial
+        <input type="number" step="0.01" min="0" formControlName="initial_rate" />
+      </label>
+    }
+    <button class="btn btn--primary" type="submit" [disabled]="saving()">Guardar</button>
+    <button class="btn btn--ghost" type="button" (click)="closeForm()">Cancelar</button>
+
+    @if (formError(); as message) {
+      <p class="alert" style="flex-basis: 100%; margin: 0" role="alert">{{ message }}</p>
+    }
+    @if (similar().length) {
+      <div class="alert" style="flex-basis: 100%; margin: 0" role="alertdialog" aria-label="Posible trabajador repetido">
+        <p style="margin: 0 0 0.5rem">Ya existe un trabajador con ese nombre. Si es otra persona, puedes crearlo igual:</p>
+        <ul style="margin: 0 0 0.75rem">
+          @for (s of similar(); track s.id) {
+            <li>{{ s.full_name }} {{ s.document_id ? '(' + s.document_id + ')' : '(sin documento)' }}</li>
+          }
+        </ul>
+        <button class="btn btn--ghost btn--sm" type="button" (click)="confirmDuplicate()">Es otra persona, crear de todos modos</button>
+      </div>
+    }
+  </form>
+}
+
+@if (ratesFor(); as emp) {
+  <section class="panel" aria-label="Tarifas">
+    <div class="form-row" style="justify-content: space-between">
+      <h3>Tarifas de {{ emp.full_name }}</h3>
+      <button class="btn btn--ghost btn--sm" type="button" (click)="closeRates()">Cerrar</button>
+    </div>
+    <form class="form-row rate-form" [formGroup]="rateForm" (ngSubmit)="addRate()">
+      <label>
+        Tarifa por hora ({{ emp.currency }})
+        <input type="number" step="0.01" min="0" formControlName="rate" />
+      </label>
+      <label>
+        Rige desde
+        <input type="date" formControlName="effective_from" />
+      </label>
+      <button class="btn btn--primary" type="submit">Agregar tarifa</button>
+    </form>
+    @if (rateError(); as message) {
+      <p class="alert" style="margin-top: 0.75rem" role="alert">{{ message }}</p>
+    }
+    <div class="table-wrap" style="margin-top: 0.75rem">
+      <table>
+        <thead><tr><th>Rige desde</th><th class="num">Tarifa por hora</th></tr></thead>
+        <tbody>
+          @for (r of rates(); track r.id) {
+            <tr><td>{{ r.effective_from | date: 'dd/MM/yyyy' }}</td><td class="num">{{ money(r.rate, emp.currency) }}</td></tr>
+          } @empty {
+            <tr><td colspan="2" class="empty">Sin historial de tarifas.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+}
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Nombre</th><th>Documento</th><th>Cargo</th><th>Pago</th><th class="num">Tarifa vigente</th><th>Estado</th><th></th></tr>
+    </thead>
+    <tbody>
+      @for (e of data()?.results; track e.id) {
+        <tr>
+          <td>{{ e.full_name }}</td>
+          <td>{{ e.document_id ?? '—' }}</td>
+          <td>{{ e.position || '—' }}</td>
+          <td>{{ e.pay_type === 'hourly' ? 'Por hora' : 'Por día' }}</td>
+          <td class="num">{{ e.pay_type === 'hourly' ? money(e.hourly_rate, e.currency) : money(e.daily_rate, e.currency) + ' / día' }}</td>
+          <td>
+            @if (e.active) { <span class="badge badge--ok">Activo</span> } @else { <span class="badge">Inactivo</span> }
+          </td>
+          <td class="row-actions">
+            <button class="btn btn--ghost btn--sm" type="button" (click)="edit(e)">Editar</button>
+            @if (e.pay_type === 'hourly') {
+              <button class="btn btn--ghost btn--sm" type="button" (click)="openRates(e)">Tarifas</button>
+            }
+            <button class="btn btn--ghost btn--sm" type="button" (click)="toggleActive(e)">{{ e.active ? 'Desactivar' : 'Activar' }}</button>
+          </td>
+        </tr>
+      } @empty {
+        <tr><td colspan="7" class="empty">{{ loading() ? 'Cargando…' : 'No hay trabajadores con esos filtros.' }}</td></tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+@if (totalPages() > 1) {
+  <nav class="pager" aria-label="Paginación">
+    <button class="btn btn--ghost btn--sm" type="button" [disabled]="page() <= 1" (click)="goTo(page() - 1)">Anterior</button>
+    <span>Página {{ page() }} de {{ totalPages() }}</span>
+    <button class="btn btn--ghost btn--sm" type="button" [disabled]="page() >= totalPages()" (click)="goTo(page() + 1)">Siguiente</button>
+  </nav>
+}
