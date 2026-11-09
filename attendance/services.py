@@ -22,18 +22,23 @@ def configured_lunch_minutes(project, on_date) -> int:
     return rule.lunch_minutes if rule else 0
 
 
-def net_worked_minutes(attendance) -> int:
+def net_worked_minutes(attendance, lunch_minutes=None) -> int:
     """Minutos netos de una jornada.
     1) ajuste manual si existe; 2) sin ingreso/salida => 0;
     3) descuenta almuerzo configurado; sin regla: L-V descuenta 60 min si bruto > 5 h
-    (sábado no descuenta); 4) redondea a 30 min."""
+    (sábado no descuenta); 4) redondea a 30 min.
+    `lunch_minutes` permite pasar el almuerzo ya resuelto (reportes masivos sin
+    consultar la base por jornada)."""
     if attendance.manual_minutes is not None:
         return int(attendance.manual_minutes)
     if not attendance.check_in or not attendance.check_out:
         return 0
 
     gross = max(0, int((attendance.check_out - attendance.check_in).total_seconds() // 60))
-    lunch = configured_lunch_minutes(attendance.project, attendance.date)
+    lunch = (
+        lunch_minutes if lunch_minutes is not None
+        else configured_lunch_minutes(attendance.project, attendance.date)
+    )
     if lunch > 0:
         gross -= lunch
     elif attendance.date.weekday() != 5 and gross > LEGACY_LUNCH_THRESHOLD:
