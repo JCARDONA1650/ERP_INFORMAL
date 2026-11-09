@@ -1,0 +1,102 @@
+.shell {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 240px 1fr;
+
+  &__side {
+    padding: 1.25rem 1rem;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+
+    nav {
+      display: grid;
+      gap: 0.25rem;
+      margin-top: 1.5rem;
+    }
+
+    nav a {
+      padding: 0.6rem 0.75rem;
+      border-radius: 8px;
+      color: var(--muted);
+      text-decoration: none;
+      transition: background-color 0.15s ease, color 0.15s ease;
+
+      &:hover {
+        background: var(--surface-2);
+        color: var(--text);
+      }
+
+      &.is-active {
+        background: var(--surface-2);
+        color: var(--accent);
+      }
+    }
+  }
+
+  &__brand {
+    color: var(--text);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+
+    span {
+      color: var(--accent);
+    }
+  }
+
+  &__main {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    min-width: 0;
+  }
+
+  &__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  &__user {
+    display: grid;
+
+    small {
+      color: var(--muted);
+    }
+  }
+
+  &__content {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .shell {
+    grid-template-columns: 1fr;
+
+    &__side {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem 1rem;
+      border-right: 0;
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+
+      nav {
+        display: flex;
+        margin-top: 0;
+      }
+    }
+
+    &__top {
+      padding: 0.75rem 1rem;
+    }
+
+    &__content {
+      padding: 1rem;
+    }
+  }
+}

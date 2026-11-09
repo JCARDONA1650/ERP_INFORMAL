@@ -1,0 +1,83 @@
+.login {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: radial-gradient(900px 500px at 50% -10%, rgba(201, 168, 76, 0.1), transparent), var(--bg);
+
+  &__card {
+    width: 100%;
+    max-width: 400px;
+    padding: 2rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+
+  &__brand {
+    margin: 0;
+    font-size: 1.6rem;
+    letter-spacing: 0.04em;
+
+    span {
+      color: var(--accent);
+    }
+  }
+
+  &__subtitle {
+    margin: 0.25rem 0 1.5rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  &__error {
+    margin: 0 0 1rem;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid var(--danger);
+    border-radius: 10px;
+    background: var(--danger-soft);
+    color: #fca5a5;
+    font-size: 0.9rem;
+  }
+
+  &__submit {
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+}
+
+.field {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+
+  label {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  input {
+    padding: 0.7rem 0.85rem;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font: inherit;
+    transition: border-color 0.15s ease;
+
+    &:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    &[aria-invalid='true'] {
+      border-color: var(--danger);
+    }
+  }
+
+  &__hint {
+    color: #fca5a5;
+    font-size: 0.8rem;
+  }
+}

@@ -1,0 +1,24 @@
+<div class="shell">
+  <aside class="shell__side">
+    <a class="shell__brand" routerLink="/inicio">INFORMAL <span>ERP</span></a>
+    <nav aria-label="Principal">
+      @for (item of items(); track item.path) {
+        <a [routerLink]="item.path" routerLinkActive="is-active">{{ item.label }}</a>
+      }
+    </nav>
+  </aside>
+
+  <div class="shell__main">
+    <header class="shell__top">
+      <div class="shell__user">
+        <strong>{{ user()?.full_name }}</strong>
+        <small>{{ user()?.roles?.join(' · ') }}</small>
+      </div>
+      <button class="btn btn--ghost" type="button" (click)="logout()">Cerrar sesión</button>
+    </header>
+
+    <main class="shell__content">
+      <router-outlet />
+    </main>
+  </div>
+</div>
