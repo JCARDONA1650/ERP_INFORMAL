@@ -1,0 +1,155 @@
+<header class="page-head">
+  <h1>Finanzas</h1>
+  <p class="muted">Ingresos y gastos por proyecto. Los movimientos se editan, no se borran, y cada cambio queda auditado.</p>
+</header>
+
+<form class="panel form-row" [formGroup]="filters" (ngSubmit)="search()">
+  <label>
+    Proyecto
+    <select formControlName="project">
+      <option [ngValue]="null" disabled>Selecciona…</option>
+      @for (p of projects(); track p.id) {
+        <option [ngValue]="p.id">{{ p.name }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    Desde
+    <input type="date" formControlName="date_from" />
+  </label>
+  <label>
+    Hasta
+    <input type="date" formControlName="date_to" />
+  </label>
+  <button class="btn btn--primary" type="submit">Ver</button>
+</form>
+
+@if (error(); as message) {
+  <p class="alert" role="alert">{{ message }}</p>
+}
+
+@if (summary(); as s) {
+  <section class="cards" aria-label="Resumen">
+    <article class="card">
+      <h2>Contrato</h2>
+      <p class="card__value">{{ money(s.contract.value, s.contract.currency) }}</p>
+      <p class="muted">
+        @if (s.contract.billed_pct !== null) { Facturado: {{ s.contract.billed_pct }}% } @else { Sin valor de contrato }
+      </p>
+    </article>
+    @for (cur of currencies(); track cur) {
+      <article class="card">
+        <h2>Balance {{ cur }}</h2>
+        <p class="card__value">{{ money(s.balance[cur], cur) }}</p>
+        <p class="muted">
+          Ingresos {{ money(s.incomes[cur], cur) }} · Gastos {{ money(s.expenses[cur], cur) }}
+        </p>
+      </article>
+    }
+  </section>
+
+  @if (s.expenses_by_category.length) {
+    <div class="table-wrap cat-table">
+      <table>
+        <caption class="sr-only">Gastos por categoría</caption>
+        <thead><tr><th>Categoría de gasto</th><th class="num">Total</th></tr></thead>
+        <tbody>
+          @for (c of s.expenses_by_category; track c.category + c.currency) {
+            <tr>
+              <td>{{ categoryLabel(c.category) }}</td>
+              <td class="num">{{ money(c.total, c.currency) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <div class="toolbar">
+    <div class="tabs" role="tablist" aria-label="Tipo de movimiento">
+      <button type="button" role="tab" [attr.aria-selected]="kind() === 'incomes'" [class.is-active]="kind() === 'incomes'" (click)="setKind('incomes')">Ingresos</button>
+      <button type="button" role="tab" [attr.aria-selected]="kind() === 'expenses'" [class.is-active]="kind() === 'expenses'" (click)="setKind('expenses')">Gastos</button>
+    </div>
+    <button class="btn btn--primary" type="button" (click)="openNew()">
+      {{ kind() === 'incomes' ? 'Nuevo ingreso' : 'Nuevo gasto' }}
+    </button>
+  </div>
+
+  @if (formOpen()) {
+    <form class="panel form-row movement-form" aria-label="Formulario de movimiento" [formGroup]="form" (ngSubmit)="save()">
+      <h3 style="flex-basis: 100%">
+        {{ editing() ? 'Editar' : 'Nuevo' }} {{ kind() === 'incomes' ? 'ingreso' : 'gasto' }}
+      </h3>
+      <label>
+        Fecha
+        <input type="date" formControlName="date" />
+      </label>
+      <label>
+        Monto
+        <input type="number" step="0.01" min="0" formControlName="amount" />
+      </label>
+      <label>
+        Moneda
+        <select formControlName="currency">
+          <option value="USD">USD</option>
+          <option value="COP">COP</option>
+        </select>
+      </label>
+      @if (kind() === 'expenses') {
+        <label>
+          Categoría
+          <select formControlName="category">
+            @for (c of categories; track c.value) {
+              <option [value]="c.value">{{ c.label }}</option>
+            }
+          </select>
+        </label>
+      }
+      <label class="form-row__grow">
+        Descripción
+        <input type="text" maxlength="200" formControlName="description" />
+      </label>
+      <button class="btn btn--primary" type="submit" [disabled]="saving()">Guardar</button>
+      <button class="btn btn--ghost" type="button" (click)="closeForm()">Cancelar</button>
+      @if (formError(); as message) {
+        <p class="alert" style="flex-basis: 100%; margin: 0" role="alert">{{ message }}</p>
+      }
+    </form>
+  }
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          @if (kind() === 'expenses') { <th>Categoría</th> }
+          <th>Descripción</th><th class="num">Monto</th><th>Registró</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (m of list()?.results; track m.id) {
+          <tr>
+            <td>{{ m.date | date: 'dd/MM/yyyy' }}</td>
+            @if (kind() === 'expenses') { <td>{{ categoryLabel(m.category) }}</td> }
+            <td>{{ m.description || '—' }}</td>
+            <td class="num">{{ money(m.amount, m.currency) }}</td>
+            <td>{{ m.created_by ?? '—' }}</td>
+            <td><button class="btn btn--ghost btn--sm" type="button" (click)="edit(m)">Editar</button></td>
+          </tr>
+        } @empty {
+          <tr><td [attr.colspan]="kind() === 'expenses' ? 6 : 5" class="empty">{{ loading() ? 'Cargando…' : 'No hay movimientos.' }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalPages() > 1) {
+    <nav class="pager" aria-label="Paginación">
+      <button class="btn btn--ghost btn--sm" type="button" [disabled]="page() <= 1" (click)="goTo(page() - 1)">Anterior</button>
+      <span>Página {{ page() }} de {{ totalPages() }}</span>
+      <button class="btn btn--ghost btn--sm" type="button" [disabled]="page() >= totalPages()" (click)="goTo(page() + 1)">Siguiente</button>
+    </nav>
+  }
+} @else {
+  <p class="muted">Elige un proyecto para ver su resumen financiero.</p>
+}
