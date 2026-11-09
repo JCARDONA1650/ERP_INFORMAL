@@ -129,3 +129,106 @@ class ScanTests(BaseCase):
             AttendanceScan.objects.create(
                 employee=self.emp, action="in", device_ts=at(MONDAY, 7), source="huella_cruda"
             )
+
+
+from django.core.files.uploadedfile import SimpleUploadedFile  # noqa: E402
+
+from projects.models import ProjectSite  # noqa: E402
+
+from .qr import QRTokenError, make_qr_token, verify_qr_token  # noqa: E402
+from .services import ScanError, register_scan  # noqa: E402
+
+
+class QRTokenTests(BaseCase):
+    def test_token_valido_del_dia(self):
+        verify_qr_token(self.project, make_qr_token(self.project))
+
+    def test_token_de_otro_proyecto_falla(self):
+        other = Project.objects.create(name="Otro")
+        with self.assertRaises(QRTokenError):
+            verify_qr_token(other, make_qr_token(self.project))
+
+    def test_token_de_otro_dia_falla(self):
+        yesterday = dt.date.today() - dt.timedelta(days=1)
+        with self.assertRaises(QRTokenError):
+            verify_qr_token(self.project, make_qr_token(self.project, yesterday))
+
+    def test_token_manipulado_o_vacio_falla(self):
+        with self.assertRaises(QRTokenError):
+            verify_qr_token(self.project, make_qr_token(self.project) + "x")
+        with self.assertRaises(QRTokenError):
+            verify_qr_token(self.project, "")
+
+
+class RegisterScanTests(BaseCase):
+    def test_ingreso_y_salida(self):
+        r = register_scan(self.project, self.emp, "in")
+        self.assertIsNotNone(r.attendance.check_in)
+        self.assertIn(self.emp, self.project.employees.all())
+        r = register_scan(self.project, self.emp, "out")
+        self.assertIsNotNone(r.attendance.check_out)
+        self.assertEqual(AttendanceScan.objects.count(), 2)
+
+    def test_salida_sin_ingreso(self):
+        with self.assertRaises(ScanError):
+            register_scan(self.project, self.emp, "out")
+        self.assertEqual(AttendanceScan.objects.count(), 0)
+
+    def test_reintento_offline_no_duplica(self):
+        import uuid
+
+        uid = uuid.uuid4()
+        register_scan(self.project, self.emp, "in", client_uuid=uid)
+        r = register_scan(self.project, self.emp, "in", client_uuid=uid)
+        self.assertTrue(r.duplicate)
+        self.assertEqual(AttendanceScan.objects.count(), 1)
+
+    def test_segundo_ingreso_no_cambia_hora(self):
+        first = register_scan(self.project, self.emp, "in").attendance.check_in
+        again = register_scan(self.project, self.emp, "in").attendance
+        self.assertEqual(again.check_in, first)
+
+    def test_trabajador_inactivo(self):
+        self.emp.active = False
+        self.emp.save()
+        with self.assertRaises(ScanError):
+            register_scan(self.project, self.emp, "in")
+
+    def test_fuera_de_zona_marca_revision_sin_bloquear(self):
+        ProjectSite.objects.create(
+            project=self.project, latitude="28.500000", longitude="-81.400000", radius_m=150
+        )
+        project = Project.objects.get(pk=self.project.pk)
+        r = register_scan(project, self.emp, "in", latitude=28.52, longitude=-81.4)
+        self.assertFalse(r.in_zone)
+        self.assertTrue(r.attendance.needs_review)
+        self.assertIsNotNone(r.attendance.check_in)
+
+    def test_dentro_de_zona_no_requiere_revision(self):
+        ProjectSite.objects.create(
+            project=self.project, latitude="28.500000", longitude="-81.400000", radius_m=150
+        )
+        project = Project.objects.get(pk=self.project.pk)
+        r = register_scan(project, self.emp, "in", latitude=28.5005, longitude=-81.4)
+        self.assertTrue(r.in_zone)
+        self.assertFalse(r.attendance.needs_review)
+
+    def test_sin_ubicacion_no_marca_revision(self):
+        r = register_scan(self.project, self.emp, "in")
+        self.assertIsNone(r.in_zone)
+        self.assertFalse(r.attendance.needs_review)
+
+    def test_foto_se_conserva_si_la_siguiente_marcacion_no_trae(self):
+        import tempfile
+
+        from django.test import override_settings
+        from PIL import Image
+        import io
+
+        buf = io.BytesIO()
+        Image.new("RGB", (4, 4)).save(buf, "PNG")
+        photo = SimpleUploadedFile("f.png", buf.getvalue(), content_type="image/png")
+        with tempfile.TemporaryDirectory() as tmp, override_settings(MEDIA_ROOT=tmp):
+            register_scan(self.project, self.emp, "in", photo=photo)
+            r = register_scan(self.project, self.emp, "out")
+            self.assertTrue(r.attendance.evidence_photo)

@@ -39,3 +39,129 @@ def net_worked_minutes(attendance) -> int:
     elif attendance.date.weekday() != 5 and gross > LEGACY_LUNCH_THRESHOLD:
         gross -= LEGACY_LUNCH_MINUTES
     return round_to_nearest(max(0, gross))
+
+
+# ───────────────── Registro de marcaciones ─────────────────
+import logging
+import uuid as uuid_lib
+from dataclasses import dataclass
+from decimal import ROUND_HALF_UP, Decimal
+
+from django.db import transaction
+from django.utils import timezone
+
+from projects.services import is_in_zone
+
+from .models import Attendance, AttendanceScan
+
+logger = logging.getLogger(__name__)
+
+
+def _coord(value):
+    """Normaliza una coordenada GPS a 6 decimales (el GPS entrega más precisión)."""
+    if value in (None, ""):
+        return None
+    return Decimal(str(value)).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+
+
+class ScanError(Exception):
+    """Marcación no permitida (p. ej. salida sin ingreso, trabajador inactivo)."""
+
+
+@dataclass
+class ScanResult:
+    attendance: Attendance
+    duplicate: bool
+    message: str
+    in_zone: bool | None
+
+
+@transaction.atomic
+def register_scan(
+    project,
+    employee,
+    action: str,
+    *,
+    source: str = "qr",
+    device_ts=None,
+    client_uuid=None,
+    latitude=None,
+    longitude=None,
+    device_name: str = "",
+    verification_reference: str = "",
+    photo=None,
+) -> ScanResult:
+    """Registra un ingreso ('in') o salida ('out').
+
+    - Idempotente por `client_uuid` (reintentos offline no duplican).
+    - Fuera de zona NO bloquea: marca la jornada `needs_review`.
+    - Salida sin ingreso previo => ScanError.
+    """
+    if action not in ("in", "out"):
+        raise ScanError("Acción inválida.")
+    if not employee.active:
+        raise ScanError("El trabajador está inactivo.")
+
+    client_uuid = client_uuid or uuid_lib.uuid4()
+    now = timezone.now()
+    today = timezone.localdate(now)
+
+    existing = AttendanceScan.objects.filter(client_uuid=client_uuid).first()
+    if existing:
+        att = Attendance.objects.filter(
+            project=project, employee=employee, date=today
+        ).first()
+        return ScanResult(att, True, "Marcación ya registrada.", existing.in_zone)
+
+    latitude, longitude = _coord(latitude), _coord(longitude)
+    in_zone = is_in_zone(project, latitude, longitude)
+    project.employees.add(employee)
+
+    AttendanceScan.objects.create(
+        client_uuid=client_uuid,
+        employee=employee,
+        project=project,
+        action=action,
+        device_ts=device_ts or now,
+        source=source,
+        device_name=device_name[:100],
+        verification_reference=verification_reference[:120],
+        latitude=latitude,
+        longitude=longitude,
+        in_zone=in_zone,
+    )
+
+    att, _ = Attendance.objects.select_for_update().get_or_create(
+        project=project, employee=employee, date=today
+    )
+    if photo:
+        att.evidence_photo = photo
+    if in_zone is not None:
+        att.in_zone = in_zone if att.in_zone is not False else False
+    if in_zone is False:
+        att.needs_review = True
+
+    local = timezone.localtime(now).strftime("%H:%M")
+    if action == "in":
+        if att.check_in is None:
+            att.check_in, att.check_in_source = now, source
+            msg = f"Ingreso registrado: {employee.full_name} a las {local}."
+        else:
+            msg = f"{employee.full_name} ya tenía ingreso registrado."
+    else:
+        if att.check_in is None:
+            raise ScanError("No hay ingreso previo. Primero registra la entrada.")
+        if att.check_out is None:
+            att.check_out, att.check_out_source = now, source
+        att.save()
+        m = att.worked_minutes()
+        msg = (
+            f"Salida registrada: {employee.full_name} a las {local}. "
+            f"Tiempo neto trabajado: {m // 60:02d}:{m % 60:02d}."
+        )
+    att.save()
+    logger.info(
+        "Marcación: proyecto=%s trabajador=%s acción=%s fuente=%s en_zona=%s",
+        project.pk, employee.pk, action, source, in_zone,
+    )
+    return ScanResult(att, False, msg, in_zone)
