@@ -3,3 +3,5 @@ psycopg[binary]==3.2.10
 python-dotenv==1.2.2
 whitenoise==6.9.0
 waitress==3.0.2
+pillow==11.3.0
+qrcode==8.2
