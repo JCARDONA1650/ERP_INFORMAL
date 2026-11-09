@@ -1,0 +1,66 @@
+<main class="mark">
+  <section class="mark__card" aria-labelledby="mark-title">
+    <h1 id="mark-title" class="mark__brand">INFORMAL <span>ERP</span></h1>
+
+    @switch (status()) {
+      @case ('loading') {
+        <p class="mark__muted" role="status">Cargando…</p>
+      }
+      @case ('invalid') {
+        <p class="mark__alert" role="alert">{{ error() }}</p>
+      }
+      @case ('ready') {
+        <p class="mark__project">{{ context()?.project?.name }}</p>
+
+        @if (success(); as message) {
+          <p class="mark__ok" role="status">{{ message }}</p>
+        }
+        @if (error(); as message) {
+          <p class="mark__alert" role="alert">{{ message }}</p>
+        }
+
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+          <div class="field">
+            <label for="employee">Tu nombre</label>
+            <select id="employee" formControlName="employee">
+              <option [ngValue]="null" disabled>Selecciona…</option>
+              @for (e of context()?.employees; track e.id) {
+                <option [ngValue]="e.id">{{ e.full_name }}</option>
+              }
+            </select>
+          </div>
+
+          <fieldset class="actions">
+            <legend class="sr-only">Acción</legend>
+            <label class="actions__opt">
+              <input type="radio" value="in" formControlName="action" />
+              <span>Ingreso</span>
+            </label>
+            <label class="actions__opt">
+              <input type="radio" value="out" formControlName="action" />
+              <span>Salida</span>
+            </label>
+          </fieldset>
+
+          <div class="field">
+            <label for="photo">Foto de constancia</label>
+            <input
+              id="photo"
+              type="file"
+              accept="image/*"
+              capture="environment"
+              (change)="onPhoto($event)"
+            />
+            @if (photoName(); as name) {
+              <span class="field__hint">{{ name }}</span>
+            }
+          </div>
+
+          <button class="btn btn--primary mark__submit" type="submit" [disabled]="sending()">
+            {{ sending() ? 'Enviando…' : 'Registrar' }}
+          </button>
+        </form>
+      }
+    }
+  </section>
+</main>

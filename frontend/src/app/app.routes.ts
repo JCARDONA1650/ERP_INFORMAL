@@ -10,6 +10,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/login/login').then((m) => m.Login),
   },
   {
+    // Pública: el trabajador marca sin usuario; el QR firmado del día es su llave.
+    path: 'marcar/:slug',
+    title: 'Marcar asistencia · INFORMAL ERP',
+    loadComponent: () => import('./features/mark/mark').then((m) => m.Mark),
+  },
+  {
     path: '',
     canActivate: [authGuard],
     loadComponent: () => import('./layout/shell/shell').then((m) => m.Shell),
