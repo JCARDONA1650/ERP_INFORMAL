@@ -7,7 +7,7 @@ from attendance.models import Attendance
 from attendance.services import lunch_from_map, lunch_minutes_map, net_worked_minutes
 
 
-def attendance_rows(date_from, date_to, project=None, employee=None) -> list[dict]:
+def attendance_rows(date_from, date_to, project=None, employee=None, projects=None) -> list[dict]:
     """Jornadas del rango con minutos netos. Consultas constantes (sin N+1)."""
     qs = Attendance.objects.select_related("project", "employee").filter(
         date__range=(date_from, date_to)
@@ -16,6 +16,8 @@ def attendance_rows(date_from, date_to, project=None, employee=None) -> list[dic
         qs = qs.filter(project=project)
     if employee:
         qs = qs.filter(employee=employee)
+    if projects is not None:  # restringe a un conjunto (p. ej. proyectos de un supervisor)
+        qs = qs.filter(project__in=projects)
 
     lunch = lunch_minutes_map()
     rows = []

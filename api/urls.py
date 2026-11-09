@@ -8,6 +8,7 @@ from .employees import EmployeeViewSet
 from .finance import ExpenseViewSet, IncomeViewSet, ProjectFinanceSummaryView
 from .payroll import PayrollLineAdjustView, PayrollPeriodViewSet
 from .projects import ProjectViewSet
+from .reports import AttendanceReportView, FinanceReportView, PayrollReportView
 from .scan import ScanContextView, ScanView
 
 router = DefaultRouter()
@@ -27,5 +28,8 @@ urlpatterns = [
     path("scan/<slug:slug>/context/", ScanContextView.as_view(), name="api-scan-context"),
     path("payroll/lines/<int:pk>/adjust/", PayrollLineAdjustView.as_view(), name="payroll-line-adjust"),
     path("projects/<int:pk>/finance/", ProjectFinanceSummaryView.as_view(), name="api-project-finance"),
+    path("reports/payroll/<int:pk>/<str:fmt>/", PayrollReportView.as_view(), name="report-payroll"),
+    path("reports/attendance/<str:fmt>/", AttendanceReportView.as_view(), name="report-attendance"),
+    path("reports/finance/<int:pk>/<str:fmt>/", FinanceReportView.as_view(), name="report-finance"),
     path("", include(router.urls)),
 ]
