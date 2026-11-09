@@ -37,3 +37,25 @@ def projects_for(user):
     if user.is_superuser:
         return Project.objects.all()
     return Project.objects.filter(supervisors=user)
+
+
+from django.db import transaction  # noqa: E402
+
+from .models import ProjectSite  # noqa: E402
+
+
+@transaction.atomic
+def save_project_site(project: Project, data):
+    """Crea, actualiza o elimina la zona de obra. `data=None` la elimina."""
+    if data is None:
+        ProjectSite.objects.filter(project=project).delete()
+        return None
+    site, _ = ProjectSite.objects.get_or_create(
+        project=project,
+        defaults={"latitude": data["latitude"], "longitude": data["longitude"]},
+    )
+    for key in ("latitude", "longitude", "radius_m"):
+        if key in data:
+            setattr(site, key, data[key])
+    site.save()
+    return site
