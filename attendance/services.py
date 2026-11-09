@@ -15,6 +15,20 @@ def round_to_nearest(minutes: int, step: int = ROUND_STEP) -> int:
     return minutes + (step - remainder)
 
 
+def lunch_minutes_map() -> dict:
+    """{(project_id|None, weekday): minutos} de reglas activas, en una sola consulta."""
+    return {
+        (r.project_id, r.weekday): r.lunch_minutes
+        for r in ProjectLunchRule.objects.filter(active=True)
+    }
+
+
+def lunch_from_map(lunch_map: dict, project_id, on_date) -> int:
+    """Almuerzo de un día usando el mapa precargado: regla del proyecto > global > 0."""
+    wd = on_date.weekday()
+    return lunch_map.get((project_id, wd), lunch_map.get((None, wd), 0))
+
+
 def configured_lunch_minutes(project, on_date) -> int:
     """Almuerzo configurado: regla del proyecto > regla global > 0."""
     rules = ProjectLunchRule.objects.filter(weekday=on_date.weekday(), active=True)
@@ -52,7 +66,7 @@ import uuid as uuid_lib
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
 
-from django.db import transaction
+from django.db import models, transaction
 from django.utils import timezone
 
 from projects.services import is_in_zone
@@ -170,3 +184,44 @@ def register_scan(
         project.pk, employee.pk, action, source, in_zone,
     )
     return ScanResult(att, False, msg, in_zone)
+
+
+# ───────────────── Revisión y ajuste manual ─────────────────
+from accounts.services import audit  # noqa: E402
+
+
+class AttendanceLocked(Exception):
+    """La jornada pertenece a una nómina cerrada y no admite ajustes."""
+
+
+@transaction.atomic
+def review_attendance(attendance: Attendance, user) -> Attendance:
+    """Marca la jornada como revisada, registrando quién y cuándo."""
+    attendance.needs_review = False
+    attendance.reviewed_by = user
+    attendance.reviewed_at = timezone.now()
+    attendance.save()
+    audit(user, "revisar", "Attendance", attendance.pk, str(attendance))
+    return attendance
+
+
+@transaction.atomic
+def adjust_minutes(attendance: Attendance, minutes: int, reason: str, user) -> Attendance:
+    """Ajuste manual de minutos netos. Exige motivo y que la nómina no esté cerrada."""
+    from payroll.models import STATUS_CLOSED, PayrollPeriod  # import local: evita ciclo
+
+    if not reason or not reason.strip():
+        raise ValueError("Todo ajuste manual requiere un motivo.")
+    if PayrollPeriod.objects.filter(
+        status=STATUS_CLOSED,
+        start_date__lte=attendance.date,
+        end_date__gte=attendance.date,
+    ).filter(models.Q(project__isnull=True) | models.Q(project=attendance.project)).exists():
+        raise AttendanceLocked("La jornada pertenece a una nómina cerrada.")
+
+    before = attendance.worked_minutes()
+    attendance.manual_minutes = int(minutes)
+    attendance.manual_note = reason.strip()
+    attendance.save()
+    audit(user, "ajustar", "Attendance", attendance.pk, f"{before} -> {minutes} min: {reason.strip()}")
+    return attendance

@@ -3,16 +3,8 @@ presentación y exportación (Excel/PDF) se agregan en la capa de API."""
 from collections import defaultdict
 from decimal import Decimal
 
-from attendance.models import Attendance, ProjectLunchRule
-from attendance.services import net_worked_minutes
-
-
-def _lunch_map() -> dict:
-    """{(project_id|None, weekday): minutos} de reglas activas, en una sola consulta."""
-    return {
-        (r.project_id, r.weekday): r.lunch_minutes
-        for r in ProjectLunchRule.objects.filter(active=True)
-    }
+from attendance.models import Attendance
+from attendance.services import lunch_from_map, lunch_minutes_map, net_worked_minutes
 
 
 def attendance_rows(date_from, date_to, project=None, employee=None) -> list[dict]:
@@ -25,10 +17,10 @@ def attendance_rows(date_from, date_to, project=None, employee=None) -> list[dic
     if employee:
         qs = qs.filter(employee=employee)
 
-    lunch = _lunch_map()
+    lunch = lunch_minutes_map()
     rows = []
     for a in qs.order_by("date", "project__name", "employee__full_name"):
-        rule = lunch.get((a.project_id, a.date.weekday()), lunch.get((None, a.date.weekday()), 0))
+        rule = lunch_from_map(lunch, a.project_id, a.date)
         rows.append({
             "date": a.date,
             "project": a.project.name,

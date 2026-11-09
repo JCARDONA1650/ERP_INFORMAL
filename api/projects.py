@@ -1,9 +1,17 @@
+from io import BytesIO
+from urllib.parse import urlencode
+
+import qrcode
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import transaction
+from django.http import HttpResponse
 from rest_framework import mixins, serializers, viewsets
+from rest_framework.decorators import action
 
 from accounts.roles import ADMINISTRADOR, RRHH, SUPERVISOR, user_has_role
 from projects.models import Project, ProjectSite
+from attendance.qr import make_qr_token
 from projects.services import projects_for, save_project_site
 from workers.models import Employee
 
@@ -101,3 +109,17 @@ class ProjectViewSet(
         if (active := self.request.query_params.get("active")) in ("true", "false"):
             qs = qs.filter(active=(active == "true"))
         return qs.select_related("site").prefetch_related("supervisors", "employees").order_by("name")
+
+    @action(detail=True, methods=["get"], url_path="qr")
+    def qr(self, request, pk=None):
+        """PNG del QR de marcación del día. Lo ve el Supervisor de la obra o el backoffice."""
+        project = self.get_object()
+        link = (
+            f"{settings.FRONTEND_BASE_URL}/marcar/{project.slug}?"
+            + urlencode({"t": make_qr_token(project)})
+        )
+        buffer = BytesIO()
+        qrcode.make(link, box_size=10, border=4).save(buffer, format="PNG")
+        response = HttpResponse(buffer.getvalue(), content_type="image/png")
+        response["Cache-Control"] = "no-store"  # el token cambia cada día
+        return response

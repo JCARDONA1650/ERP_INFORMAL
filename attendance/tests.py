@@ -232,3 +232,60 @@ class RegisterScanTests(BaseCase):
             register_scan(self.project, self.emp, "in", photo=photo)
             r = register_scan(self.project, self.emp, "out")
             self.assertTrue(r.attendance.evidence_photo)
+
+
+from django.contrib.auth import get_user_model  # noqa: E402
+
+from payroll.models import PayrollPeriod  # noqa: E402
+
+from .services import AttendanceLocked, adjust_minutes, review_attendance  # noqa: E402
+
+
+class ReviewAndAdjustTests(BaseCase):
+    def setUp(self):
+        super().setUp()
+        self.user = get_user_model().objects.create_user("sup", password="x")
+
+    def test_revisar_registra_quien_y_cuando(self):
+        from accounts.models import AuditLog
+
+        a = self.day(MONDAY, (7, 0), (16, 0), needs_review=True)
+        review_attendance(a, self.user)
+        a.refresh_from_db()
+        self.assertFalse(a.needs_review)
+        self.assertEqual(a.reviewed_by, self.user)
+        self.assertIsNotNone(a.reviewed_at)
+        self.assertTrue(AuditLog.objects.filter(action="revisar", entity_id=str(a.pk)).exists())
+
+    def test_ajuste_exige_motivo(self):
+        a = self.day(MONDAY, (7, 0), (16, 0))
+        with self.assertRaises(ValueError):
+            adjust_minutes(a, 300, "  ", self.user)
+
+    def test_ajuste_cambia_minutos_y_audita(self):
+        from accounts.models import AuditLog
+
+        a = self.day(MONDAY, (7, 0), (16, 0))
+        adjust_minutes(a, 300, "Salio temprano", self.user)
+        a.refresh_from_db()
+        self.assertEqual(a.worked_minutes(), 300)
+        self.assertIn("480 -> 300", AuditLog.objects.get(action="ajustar").detail)
+
+    def test_ajuste_bloqueado_en_nomina_cerrada(self):
+        a = self.day(MONDAY, (7, 0), (16, 0))
+        PayrollPeriod.objects.create(
+            start_date=dt.date(2026, 11, 2), end_date=dt.date(2026, 11, 8),
+            created_by=self.user, status="CLOSED",
+        )
+        with self.assertRaises(AttendanceLocked):
+            adjust_minutes(a, 300, "Tarde", self.user)
+
+    def test_nomina_cerrada_de_otro_proyecto_no_bloquea(self):
+        other = Project.objects.create(name="Otro")
+        a = self.day(MONDAY, (7, 0), (16, 0))
+        PayrollPeriod.objects.create(
+            start_date=dt.date(2026, 11, 2), end_date=dt.date(2026, 11, 8),
+            project=other, created_by=self.user, status="CLOSED",
+        )
+        adjust_minutes(a, 300, "Ok", self.user)
+        self.assertEqual(Attendance.objects.get(pk=a.pk).manual_minutes, 300)
