@@ -45,3 +45,62 @@ class AuthFlowTests(TestCase):
     def test_authenticated_user_skips_login_page(self):
         self.client.force_login(self.user)
         self.assertRedirects(self.client.get(reverse("login")), reverse("home"))
+
+
+class RolesTests(TestCase):
+    def setUp(self):
+        from django.contrib.auth.models import Group
+
+        self.User = get_user_model()
+        self.sup = self.User.objects.create_user("sup", password="x")
+        self.root = self.User.objects.create_superuser("root", password="x")
+        self.Group = Group
+
+    def test_grupos_de_rol_existen_tras_migrar(self):
+        from .roles import ROLE_NAMES
+
+        for name in ROLE_NAMES:
+            self.assertTrue(self.Group.objects.filter(name=name).exists())
+
+    def test_assign_role_y_user_has_role(self):
+        from .roles import RRHH, SUPERVISOR, assign_role, user_has_role
+
+        assign_role(self.sup, SUPERVISOR)
+        self.assertTrue(user_has_role(self.sup, SUPERVISOR))
+        self.assertFalse(user_has_role(self.sup, RRHH))
+        self.assertTrue(user_has_role(self.root, RRHH))
+
+    def test_assign_role_invalido(self):
+        from .roles import assign_role
+
+        with self.assertRaises(ValueError):
+            assign_role(self.sup, "Inventado")
+
+    def test_decorador_niega_sin_rol(self):
+        from django.core.exceptions import PermissionDenied
+        from django.test import RequestFactory
+
+        from .decorators import roles_required
+        from .roles import ADMINISTRADOR
+
+        @roles_required(ADMINISTRADOR)
+        def vista(request):
+            return "ok"
+
+        req = RequestFactory().get("/")
+        req.user = self.sup
+        with self.assertRaises(PermissionDenied):
+            vista(req)
+        req.user = self.root
+        self.assertEqual(vista(req), "ok")
+
+    def test_audit_registra_y_acepta_anonimo(self):
+        from django.contrib.auth.models import AnonymousUser
+
+        from .models import AuditLog
+        from .services import audit
+
+        audit(self.sup, "cierre", "PayrollPeriod", 3, "detalle")
+        audit(AnonymousUser(), "x", "Y")
+        self.assertEqual(AuditLog.objects.count(), 2)
+        self.assertIsNone(AuditLog.objects.get(action="x").user)
