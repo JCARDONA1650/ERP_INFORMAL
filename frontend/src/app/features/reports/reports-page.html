@@ -1,0 +1,83 @@
+<header class="page-head">
+  <h1>Reportes</h1>
+  <p class="muted">Descarga en Excel o PDF. Cada descarga queda registrada en la bitácora.</p>
+</header>
+
+<div class="grid">
+  <section class="panel" aria-labelledby="rep-att">
+    <h2 id="rep-att">Asistencia</h2>
+    <form class="form-row" [formGroup]="attendance">
+      <label>Desde <input type="date" formControlName="date_from" /></label>
+      <label>Hasta <input type="date" formControlName="date_to" /></label>
+      <label class="form-row__grow">
+        Proyecto
+        <select formControlName="project">
+          <option [ngValue]="null">Todos los míos</option>
+          @for (p of projects(); track p.id) {
+            <option [ngValue]="p.id">{{ p.name }}</option>
+          }
+        </select>
+      </label>
+    </form>
+    <div class="actions">
+      <button class="btn btn--primary" type="button" [disabled]="isBusy('attendance')" (click)="downloadAttendance('xlsx')">Excel</button>
+      <button class="btn btn--ghost" type="button" [disabled]="isBusy('attendance')" (click)="downloadAttendance('pdf')">PDF</button>
+    </div>
+    @if (errors()['attendance']; as message) {
+      <p class="alert" role="alert">{{ message }}</p>
+    }
+  </section>
+
+  @if (canPayroll()) {
+    <section class="panel" aria-labelledby="rep-pay">
+      <h2 id="rep-pay">Nómina por periodo</h2>
+      <form class="form-row" [formGroup]="payroll">
+        <label class="form-row__grow">
+          Periodo
+          <select formControlName="period">
+            <option [ngValue]="null" disabled>Selecciona…</option>
+            @for (p of periods(); track p.id) {
+              <option [ngValue]="p.id">
+                {{ p.start_date | date: 'dd/MM/yyyy' }} – {{ p.end_date | date: 'dd/MM/yyyy' }}
+                ({{ p.project_name ?? 'Todos' }}, {{ p.status === 'OPEN' ? 'abierto' : 'cerrado' }})
+              </option>
+            }
+          </select>
+        </label>
+      </form>
+      <div class="actions">
+        <button class="btn btn--primary" type="button" [disabled]="isBusy('payroll')" (click)="downloadPayroll('xlsx')">Excel</button>
+        <button class="btn btn--ghost" type="button" [disabled]="isBusy('payroll')" (click)="downloadPayroll('pdf')">PDF</button>
+      </div>
+      @if (errors()['payroll']; as message) {
+        <p class="alert" role="alert">{{ message }}</p>
+      }
+    </section>
+  }
+
+  @if (canFinance()) {
+    <section class="panel" aria-labelledby="rep-fin">
+      <h2 id="rep-fin">Resumen financiero</h2>
+      <form class="form-row" [formGroup]="finance">
+        <label class="form-row__grow">
+          Proyecto
+          <select formControlName="project">
+            <option [ngValue]="null" disabled>Selecciona…</option>
+            @for (p of projects(); track p.id) {
+              <option [ngValue]="p.id">{{ p.name }}</option>
+            }
+          </select>
+        </label>
+        <label>Desde <input type="date" formControlName="date_from" /></label>
+        <label>Hasta <input type="date" formControlName="date_to" /></label>
+      </form>
+      <div class="actions">
+        <button class="btn btn--primary" type="button" [disabled]="isBusy('finance')" (click)="downloadFinance('xlsx')">Excel</button>
+        <button class="btn btn--ghost" type="button" [disabled]="isBusy('finance')" (click)="downloadFinance('pdf')">PDF</button>
+      </div>
+      @if (errors()['finance']; as message) {
+        <p class="alert" role="alert">{{ message }}</p>
+      }
+    </section>
+  }
+</div>

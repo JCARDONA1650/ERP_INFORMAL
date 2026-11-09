@@ -14,4 +14,5 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: 'QR de obra', path: '/proyectos/qr', roles: ['Supervisor', 'Administrador', 'RRHH'] },
   { label: 'Nómina', path: '/nomina', roles: ['Administrador', 'RRHH'] },
   { label: 'Finanzas', path: '/finanzas', roles: ['Administrador'] },
+  { label: 'Reportes', path: '/reportes', roles: ['Supervisor', 'Administrador', 'RRHH'] },
 ] as const;
