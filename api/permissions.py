@@ -29,3 +29,15 @@ class IsBackoffice(HasAnyRole):
     """Administrador o RRHH."""
 
     allowed_roles = (ADMINISTRADOR, RRHH)
+
+
+class BackofficeWriteSupervisorRead(BasePermission):
+    """Administrador/RRHH: lectura y escritura. Supervisor: solo lectura."""
+
+    message = "No tienes permisos para realizar esta acción."
+
+    def has_permission(self, request, view):
+        user = request.user
+        if request.method in ("GET", "HEAD", "OPTIONS"):
+            return user_has_role(user, ADMINISTRADOR, RRHH, SUPERVISOR)
+        return user_has_role(user, ADMINISTRADOR, RRHH)
