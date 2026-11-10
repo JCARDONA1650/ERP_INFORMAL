@@ -33,6 +33,20 @@ describe('ReportsService', () => {
     fin.flush(new Blob(['x']));
   });
 
+  it('descarga el registro financiero global, con proyecto y fechas opcionales', () => {
+    service.financeLedger('xlsx').subscribe();
+    const all = http.expectOne((r) => r.url === '/api/reports/finance/ledger/xlsx/');
+    expect(all.request.params.keys().length).toBe(0);
+    expect(all.request.responseType).toBe('blob');
+    all.flush(new Blob(['x']));
+
+    service.financeLedger('pdf', { project: 2, date_from: '2026-11-01', date_to: '2026-11-30' }).subscribe();
+    const one = http.expectOne((r) => r.url === '/api/reports/finance/ledger/pdf/');
+    expect(one.request.params.get('project')).toBe('2');
+    expect(one.request.params.get('date_to')).toBe('2026-11-30');
+    one.flush(new Blob(['x']));
+  });
+
   it('convierte el error en Blob de nuevo a JSON legible', async () => {
     let received: HttpErrorResponse | undefined;
     service.payroll(4, 'xlsx').subscribe({ error: (e) => (received = e) });

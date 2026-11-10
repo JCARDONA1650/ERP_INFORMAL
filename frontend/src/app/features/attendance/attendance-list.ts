@@ -7,6 +7,7 @@ import { Attendance, AttendanceService } from '../../core/attendance/attendance.
 import { AuthService } from '../../core/auth/auth.service';
 import { Page } from '../../core/models/page';
 import { ProjectSummary, ProjectsService } from '../../core/projects/projects.service';
+import { monthRange } from '../../core/util/month';
 import { hhmmToMinutes, minutesToHhmm } from '../../core/util/time';
 
 const PAGE_SIZE = 25;
@@ -45,6 +46,7 @@ export class AttendanceList implements OnInit, OnDestroy {
 
   protected readonly filters = this.fb.group({
     project: this.fb.control<number | null>(null),
+    month: this.fb.nonNullable.control(''),
     date_from: this.fb.nonNullable.control(''),
     date_to: this.fb.nonNullable.control(''),
     needs_review: this.fb.nonNullable.control(false),
@@ -67,6 +69,17 @@ export class AttendanceList implements OnInit, OnDestroy {
   protected search(): void {
     this.page.set(1);
     this.load();
+  }
+
+  /** Elegir un mes llena Desde/Hasta con el rango del mes y busca; vaciarlo limpia el rango. */
+  protected onMonth(): void {
+    const range = monthRange(this.filters.controls.month.value);
+    this.filters.patchValue({ date_from: range?.from ?? '', date_to: range?.to ?? '' });
+    this.search();
+  }
+
+  protected clearMonth(): void {
+    this.filters.controls.month.setValue('');
   }
 
   protected goTo(page: number): void {

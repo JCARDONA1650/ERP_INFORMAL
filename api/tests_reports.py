@@ -130,3 +130,51 @@ class ReportsApiTests(APITestCase):
         self.assertEqual(self.client.get(f"/api/reports/finance/{self.p1.pk}/pdf/").status_code, 200)
         self.assertEqual(self.client.get(url + "?date_from=mal").status_code, 400)
         self.assertEqual(self.client.get("/api/reports/finance/9999/xlsx/").status_code, 404)
+
+    # ── registro financiero global ──
+    def _ledger_data(self):
+        from finance.models import ProjectExpense, ProjectIncome
+
+        ProjectIncome.objects.create(project=self.p1, date=dt.date(2026, 11, 2), amount="1000", currency="USD", created_by=self.adm)
+        ProjectExpense.objects.create(project=self.p1, date=dt.date(2026, 11, 3), amount="250", currency="USD", category="materials", description="=cmd", created_by=self.adm)
+        ProjectExpense.objects.create(project=self.p2, date=dt.date(2026, 12, 1), amount="100", currency="USD", category="payroll", created_by=self.adm)
+
+    def _ledger_cells(self, url):
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        return r, [[c.value for c in row] for row in load_workbook(BytesIO(r.content)).active.iter_rows()]
+
+    def test_registro_global_incluye_todos_los_proyectos_con_totales(self):
+        self._ledger_data()
+        self.client.force_authenticate(self.adm)
+        r, rows = self._ledger_cells("/api/reports/finance/ledger/xlsx/")
+        flat = [v for row in rows for v in row]
+        self.assertIn("Montego", flat)
+        self.assertIn("Torre Norte", flat)
+        self.assertIn("'=cmd", flat)  # sin inyección de fórmulas
+        self.assertIn(("Balance", "USD", 650.0), [(row[2], row[5], row[6]) for row in rows if row[2] == "Balance"])
+        self.assertTrue(AuditLog.objects.filter(action="exportar", detail__contains="registro financiero").exists())
+
+    def test_registro_global_filtra_por_proyecto_y_por_fechas(self):
+        self._ledger_data()
+        self.client.force_authenticate(self.adm)
+        _, rows = self._ledger_cells(f"/api/reports/finance/ledger/xlsx/?project={self.p2.pk}")
+        self.assertNotIn("Montego", [v for row in rows for v in row])
+        _, rows = self._ledger_cells("/api/reports/finance/ledger/xlsx/?date_from=2026-11-01&date_to=2026-11-30")
+        flat = [v for row in rows for v in row]
+        self.assertIn("Montego", flat)
+        self.assertNotIn("Torre Norte", flat)
+
+    def test_registro_global_pdf_permisos_y_validaciones(self):
+        self._ledger_data()
+        url = "/api/reports/finance/ledger/pdf/"
+        self.assertEqual(self.client.get(url).status_code, 401)
+        for user in (self.hr, self.sup):
+            self.client.force_authenticate(user)
+            self.assertEqual(self.client.get(url).status_code, 403)
+        self.client.force_authenticate(self.adm)
+        self.assertTrue(self.client.get(url).content.startswith(b"%PDF"))
+        self.assertEqual(self.client.get(url + "?project=abc").status_code, 400)
+        self.assertEqual(self.client.get(url + "?project=9999").status_code, 404)
+        self.assertEqual(self.client.get(url + "?date_from=2026-12-01&date_to=2026-11-01").status_code, 400)
+        self.assertEqual(self.client.get("/api/reports/finance/ledger/doc/").status_code, 400)

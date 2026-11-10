@@ -86,6 +86,27 @@ describe('FinancePage', () => {
     expect(el.textContent).toContain('Anticipo');
   });
 
+  it('elegir un mes llena Desde/Hasta con el rango del mes y recarga', () => {
+    setup();
+    flushLoad();
+    fill('input[type="month"]', '2026-11');
+    (el.querySelector('input[type="month"]') as HTMLInputElement).dispatchEvent(new Event('change'));
+    const ov = overviewReq();
+    expect(ov.request.params.get('date_from')).toBe('2026-11-01');
+    expect(ov.request.params.get('date_to')).toBe('2026-11-30');
+    ov.flush(GLOBAL);
+    listReq().flush(page([INCOME]));
+  });
+
+  it('exporta el registro global a Excel con los filtros actuales', () => {
+    setup();
+    flushLoad();
+    btn('Exportar Excel').click();
+    const req = http.expectOne((r) => r.url === '/api/reports/finance/ledger/xlsx/');
+    expect(req.request.params.has('project')).toBe(false);
+    req.flush(new Blob(['x']));
+  });
+
   it('en el registro global la lista muestra la columna Proyecto', () => {
     setup();
     flushLoad();

@@ -49,9 +49,10 @@ export class PayrollService {
   private readonly http = inject(HttpClient);
   private readonly base = `${API_URL}/payroll`;
 
-  list(status?: PeriodStatus | '', page = 1): Observable<Page<PayrollPeriod>> {
+  list(status?: PeriodStatus | '', page = 1, month = ''): Observable<Page<PayrollPeriod>> {
     let params = new HttpParams();
     if (status) params = params.set('status', status);
+    if (month) params = params.set('month', month);
     if (page > 1) params = params.set('page', page);
     return this.http.get<Page<PayrollPeriod>>(`${this.base}/periods/`, { params });
   }

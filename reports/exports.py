@@ -21,6 +21,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table as PdfTable, TableStyle
 
+from finance.models import ProjectExpense, ProjectIncome
 from payroll.models import PayrollPeriod
 
 from .services import attendance_totals, payroll_rows, payroll_totals
@@ -131,6 +132,63 @@ def finance_table(project, summary: dict, by_category: dict, date_from=None, dat
         rows=rows,
         money_cols={1, 2, 3},
         filename=f"finanzas_{project.slug}",
+    )
+
+
+MAX_LEDGER_ROWS = 10000
+
+
+class LedgerTooLarge(Exception):
+    """El registro supera el máximo exportable; hay que acotar el rango."""
+
+
+def finance_ledger_table(project=None, date_from=None, date_to=None) -> Table:
+    """Registro global de movimientos (ingresos y gastos) de todos los proyectos o de uno,
+    ordenado por fecha, con totales por moneda (sin conversión)."""
+    categories = dict(ProjectExpense.CATEGORY)
+    entries = []
+    for kind, model in (("Ingreso", ProjectIncome), ("Gasto", ProjectExpense)):
+        qs = model.objects.select_related("project", "created_by")
+        if project is not None:
+            qs = qs.filter(project=project)
+        if date_from:
+            qs = qs.filter(date__gte=date_from)
+        if date_to:
+            qs = qs.filter(date__lte=date_to)
+        for m in qs.order_by("date", "id")[: MAX_LEDGER_ROWS + 1]:
+            category = categories.get(getattr(m, "category", ""), "") if kind == "Gasto" else ""
+            entries.append((m.date, m.pk, [
+                m.date.isoformat(), m.project.name, kind, category, m.description,
+                m.currency, m.amount, m.created_by.get_username(),
+            ]))
+    if len(entries) > MAX_LEDGER_ROWS:
+        raise LedgerTooLarge(f"El registro supera {MAX_LEDGER_ROWS} movimientos; acota el rango de fechas.")
+    entries.sort(key=lambda e: (e[0], e[1]))
+
+    totals: dict[str, dict[str, Decimal]] = {}
+    for _, _, row in entries:
+        bucket = totals.setdefault(row[5], {"Ingreso": Decimal("0.00"), "Gasto": Decimal("0.00")})
+        bucket[row[2]] += row[6]
+    total_rows = []
+    for cur in sorted(totals):
+        inc, exp = totals[cur]["Ingreso"], totals[cur]["Gasto"]
+        total_rows += [
+            ["", "", "Total ingresos", "", "", cur, inc, ""],
+            ["", "", "Total gastos", "", "", cur, exp, ""],
+            ["", "", "Balance", "", "", cur, inc - exp, ""],
+        ]
+
+    ctx = [f"Proyecto: {project.name}" if project is not None else "Proyectos: todos"]
+    if date_from or date_to:
+        ctx.append(f"Rango: {date_from or '…'} a {date_to or '…'}")
+    return Table(
+        title="Registro financiero",
+        context=ctx,
+        headers=["Fecha", "Proyecto", "Tipo", "Categoría", "Descripción", "Moneda", "Monto", "Registró"],
+        rows=[row for _, _, row in entries],
+        money_cols={6},
+        totals=total_rows,
+        filename="finanzas_global" if project is None else f"finanzas_registro_{project.slug}",
     )
 
 

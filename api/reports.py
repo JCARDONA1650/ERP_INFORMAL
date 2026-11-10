@@ -11,7 +11,16 @@ from finance.services import expenses_by_category, project_summary
 from payroll.models import PayrollPeriod
 from projects.models import Project
 from projects.services import projects_for
-from reports.exports import Table, attendance_table, finance_table, payroll_table, to_pdf, to_xlsx
+from reports.exports import (
+    LedgerTooLarge,
+    Table,
+    attendance_table,
+    finance_ledger_table,
+    finance_table,
+    payroll_table,
+    to_pdf,
+    to_xlsx,
+)
 from reports.services import attendance_rows
 
 from .attendance import IsStaffRole
@@ -103,4 +112,28 @@ class FinanceReportView(APIView):
         )
         response = _file_response(table, fmt)
         audit(request.user, "exportar", "Project", project.pk, f"finanzas {fmt}")
+        return response
+
+
+class FinanceLedgerReportView(APIView):
+    """Registro global de ingresos y gastos (todos los proyectos o `?project=`), con fechas opcionales."""
+
+    permission_classes = [IsAdministrador]
+
+    def get(self, request, fmt):
+        project = None
+        if raw := request.query_params.get("project"):
+            if not raw.isdigit():
+                raise serializers.ValidationError({"detail": "project debe ser un número."})
+            project = get_object_or_404(Project, pk=int(raw))
+        date_from = _parse_date(request, "date_from", required=False)
+        date_to = _parse_date(request, "date_to", required=False)
+        if date_from and date_to and date_from > date_to:
+            raise serializers.ValidationError({"detail": "La fecha inicial no puede ser mayor que la final."})
+        try:
+            table = finance_ledger_table(project, date_from, date_to)
+        except LedgerTooLarge as exc:
+            raise serializers.ValidationError({"detail": str(exc)}) from exc
+        response = _file_response(table, fmt)
+        audit(request.user, "exportar", "Project", project.pk if project else "", f"registro financiero {fmt}")
         return response

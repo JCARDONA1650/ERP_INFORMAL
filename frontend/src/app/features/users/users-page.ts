@@ -1,8 +1,10 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 
 import { ManagedUser, UsersService } from '../../core/users/users.service';
 import { apiErrorMessage } from '../../core/util/http-error';
+
+const PAGE_SIZE = 25;
 
 interface TempCredential {
   username: string;
@@ -20,6 +22,12 @@ export class UsersPage implements OnInit {
   private readonly api = inject(UsersService);
 
   protected readonly users = signal<ManagedUser[]>([]);
+  protected readonly page = signal(1);
+  protected readonly totalPages = computed(() => Math.max(1, Math.ceil(this.users().length / PAGE_SIZE)));
+  protected readonly pageItems = computed(() => {
+    const start = (Math.min(this.page(), this.totalPages()) - 1) * PAGE_SIZE;
+    return this.users().slice(start, start + PAGE_SIZE);
+  });
   protected readonly roles = signal<string[]>([]);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);

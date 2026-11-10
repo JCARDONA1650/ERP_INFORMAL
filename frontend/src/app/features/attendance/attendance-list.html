@@ -13,12 +13,16 @@
     </select>
   </label>
   <label>
+    Mes
+    <input type="month" formControlName="month" (change)="onMonth()" />
+  </label>
+  <label>
     Desde
-    <input type="date" formControlName="date_from" />
+    <input type="date" formControlName="date_from" (input)="clearMonth()" />
   </label>
   <label>
     Hasta
-    <input type="date" formControlName="date_to" />
+    <input type="date" formControlName="date_to" (input)="clearMonth()" />
   </label>
   <label class="filters__check">
     <input type="checkbox" formControlName="needs_review" />

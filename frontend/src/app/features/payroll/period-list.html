@@ -36,6 +36,10 @@
       <option value="CLOSED">Cerrados</option>
     </select>
   </label>
+  <label>
+    Mes
+    <input type="month" [formControl]="month" (change)="applyFilter()" />
+  </label>
 </div>
 
 @if (error(); as message) {

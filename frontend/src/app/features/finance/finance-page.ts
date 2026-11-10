@@ -3,6 +3,9 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 
 import { Page } from '../../core/models/page';
+import { ReportFormat, ReportsService } from '../../core/reports/reports.service';
+import { saveBlob } from '../../core/util/download';
+import { monthRange } from '../../core/util/month';
 import {
   EXPENSE_CATEGORIES,
   FinanceOverview,
@@ -29,6 +32,7 @@ export class FinancePage implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(FinanceService);
   private readonly projectsApi = inject(ProjectsService);
+  private readonly reports = inject(ReportsService);
 
   protected readonly money = formatMoney;
   protected readonly categories = EXPENSE_CATEGORIES;
@@ -47,6 +51,7 @@ export class FinancePage implements OnInit {
   protected readonly page = signal(1);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly exporting = signal(false);
 
   /** Agrupación y moneda de la gráfica; null = automático / la principal. */
   protected readonly group = signal<SeriesGroup | null>(null);
@@ -71,6 +76,7 @@ export class FinancePage implements OnInit {
 
   protected readonly filters = this.fb.group({
     project: this.fb.control<number | null>(null), // null = todos los proyectos
+    month: this.fb.nonNullable.control(''),
     date_from: this.fb.nonNullable.control(''),
     date_to: this.fb.nonNullable.control(''),
   });
@@ -106,6 +112,35 @@ export class FinancePage implements OnInit {
     this.chartCurrency.set(null);
     this.closeForm();
     this.loadAll();
+  }
+
+  /** Elegir un mes llena Desde/Hasta con el rango del mes y busca; vaciarlo limpia el rango. */
+  protected onMonth(): void {
+    const range = monthRange(this.filters.controls.month.value);
+    this.filters.patchValue({ date_from: range?.from ?? '', date_to: range?.to ?? '' });
+    this.search();
+  }
+
+  protected clearMonth(): void {
+    this.filters.controls.month.setValue('');
+  }
+
+  /** Descarga el registro detallado (todos los proyectos o el elegido) con el rango de fechas actual. */
+  protected exportLedger(fmt: ReportFormat): void {
+    if (this.exporting()) return;
+    const { project, date_from, date_to } = this.filters.getRawValue();
+    this.exporting.set(true);
+    this.error.set(null);
+    this.reports.financeLedger(fmt, { project, date_from, date_to }).subscribe({
+      next: (blob) => {
+        this.exporting.set(false);
+        saveBlob(blob, `${project ? `registro_${project}` : 'finanzas_global'}.${fmt}`);
+      },
+      error: (err: unknown) => {
+        this.exporting.set(false);
+        this.error.set(apiErrorMessage(err, 'No se pudo generar el reporte.'));
+      },
+    });
   }
 
   protected viewProject(id: number): void {

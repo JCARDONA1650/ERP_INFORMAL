@@ -33,6 +33,15 @@ export class ReportsService {
     return this.download(`/reports/finance/${projectId}/${fmt}/`, params);
   }
 
+  /** Registro detallado de ingresos y gastos; sin proyecto = todos los proyectos. */
+  financeLedger(fmt: ReportFormat, f: { project?: number | null; date_from?: string; date_to?: string } = {}): Observable<Blob> {
+    let params = new HttpParams();
+    if (f.project) params = params.set('project', f.project);
+    if (f.date_from) params = params.set('date_from', f.date_from);
+    if (f.date_to) params = params.set('date_to', f.date_to);
+    return this.download(`/reports/finance/ledger/${fmt}/`, params);
+  }
+
   /** Con responseType blob, el cuerpo del error también llega como Blob: se vuelve a leer como JSON. */
   private download(path: string, params?: HttpParams): Observable<Blob> {
     return this.http.get(`${API_URL}${path}`, { params, responseType: 'blob' }).pipe(

@@ -1,4 +1,5 @@
 from collections import defaultdict
+from datetime import date, timedelta
 from decimal import Decimal
 
 from django.shortcuts import get_object_or_404
@@ -103,6 +104,13 @@ class PayrollPeriodViewSet(
             qs = qs.filter(status=st)
         if project := p.get("project"):
             qs = qs.filter(project_id=project) if project.isdigit() else qs.none()
+        if month := p.get("month"):  # AAAA-MM: periodos que se cruzan con ese mes
+            try:
+                first = date.fromisoformat(f"{month}-01")
+            except ValueError as exc:
+                raise serializers.ValidationError({"detail": "month debe tener formato AAAA-MM."}) from exc
+            last = (first.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+            qs = qs.filter(start_date__lte=last, end_date__gte=first)
         return qs.order_by("-start_date", "-id")
 
     def get_serializer_class(self):

@@ -17,14 +17,20 @@
     </select>
   </label>
   <label>
+    Mes
+    <input type="month" formControlName="month" (change)="onMonth()" />
+  </label>
+  <label>
     Desde
-    <input type="date" formControlName="date_from" />
+    <input type="date" formControlName="date_from" (input)="clearMonth()" />
   </label>
   <label>
     Hasta
-    <input type="date" formControlName="date_to" />
+    <input type="date" formControlName="date_to" (input)="clearMonth()" />
   </label>
   <button class="btn btn--primary" type="submit">Ver</button>
+  <button class="btn btn--ghost" type="button" [disabled]="exporting()" (click)="exportLedger('xlsx')">Exportar Excel</button>
+  <button class="btn btn--ghost" type="button" [disabled]="exporting()" (click)="exportLedger('pdf')">Exportar PDF</button>
 </form>
 
 @if (error(); as message) {

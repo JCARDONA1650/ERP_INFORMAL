@@ -33,6 +33,7 @@ export class PeriodList implements OnInit {
   );
 
   protected readonly filter = this.fb.nonNullable.control<PeriodStatus | ''>('');
+  protected readonly month = this.fb.nonNullable.control('');
   protected readonly form = this.fb.group({
     start_date: this.fb.nonNullable.control(''),
     end_date: this.fb.nonNullable.control(''),
@@ -77,7 +78,7 @@ export class PeriodList implements OnInit {
   private load(): void {
     this.loading.set(true);
     this.error.set(null);
-    this.api.list(this.filter.value, this.page()).subscribe({
+    this.api.list(this.filter.value, this.page(), this.month.value).subscribe({
       next: (res) => {
         this.data.set(res);
         this.loading.set(false);

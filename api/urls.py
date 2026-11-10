@@ -11,7 +11,7 @@ from .finance import ExpenseViewSet, FinanceOverviewView, IncomeViewSet, Project
 from .payroll import PayrollLineAdjustView, PayrollPeriodViewSet
 from .manual_scan import ManualScanContextView, ManualScanView
 from .projects import ProjectViewSet
-from .reports import AttendanceReportView, FinanceReportView, PayrollReportView
+from .reports import AttendanceReportView, FinanceLedgerReportView, FinanceReportView, PayrollReportView
 from .scan import ScanContextView, ScanView
 from .users import (
     ChangePasswordView,
@@ -44,6 +44,7 @@ urlpatterns = [
     path("projects/<int:pk>/finance/", ProjectFinanceSummaryView.as_view(), name="api-project-finance"),
     path("reports/payroll/<int:pk>/<str:fmt>/", PayrollReportView.as_view(), name="report-payroll"),
     path("reports/attendance/<str:fmt>/", AttendanceReportView.as_view(), name="report-attendance"),
+    path("reports/finance/ledger/<str:fmt>/", FinanceLedgerReportView.as_view(), name="report-finance-ledger"),
     path("reports/finance/<int:pk>/<str:fmt>/", FinanceReportView.as_view(), name="report-finance"),
     path("geocode/search/", AddressSearchView.as_view(), name="api-geocode-search"),
     path("geocode/reverse/", AddressReverseView.as_view(), name="api-geocode-reverse"),

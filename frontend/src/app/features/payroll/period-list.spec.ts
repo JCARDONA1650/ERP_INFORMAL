@@ -37,6 +37,17 @@ describe('PeriodList', () => {
     expect(el.textContent).toContain('Todos');
   });
 
+  it('filtrar por mes pide los periodos de ese mes desde la primera página', () => {
+    const { fixture, el } = setup();
+    const month = el.querySelector('input[type="month"]') as HTMLInputElement;
+    month.value = '2026-11'; month.dispatchEvent(new Event('input')); month.dispatchEvent(new Event('change'));
+    const req = http.expectOne((r) => r.url === '/api/payroll/periods/');
+    expect(req.request.params.get('month')).toBe('2026-11');
+    expect(req.request.params.has('page')).toBe(false);
+    req.flush(page([PERIOD]));
+    fixture.detectChanges();
+  });
+
   it('exige ambas fechas antes de crear', () => {
     const { fixture, el } = setup();
     (el.querySelector('form') as HTMLFormElement).dispatchEvent(new Event('submit'));

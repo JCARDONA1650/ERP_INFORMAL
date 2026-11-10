@@ -69,6 +69,11 @@ export class ReportsPage implements OnInit {
     this.run('finance', fmt, this.reports.finance(project, fmt, date_from, date_to), `finanzas_${project}`);
   }
 
+  protected downloadLedger(fmt: ReportFormat): void {
+    const { project, date_from, date_to } = this.finance.getRawValue();
+    this.run('ledger', fmt, this.reports.financeLedger(fmt, { project, date_from, date_to }), project ? `registro_${project}` : 'finanzas_global');
+  }
+
   protected isBusy(section: string): boolean {
     return this.busy()?.startsWith(section) ?? false;
   }

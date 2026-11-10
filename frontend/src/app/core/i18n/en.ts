@@ -138,6 +138,13 @@ export const EN_EXACT: Record<string, string> = {
   // ── Inicio / dashboard ──
   Indicadores: 'Indicators',
   'Resumen financiero': 'Financial summary',
+  'Resumen · Excel': 'Summary · Excel',
+  'Resumen · PDF': 'Summary · PDF',
+  'Registro detallado · Excel': 'Detailed ledger · Excel',
+  'Registro detallado · PDF': 'Detailed ledger · PDF',
+  'El resumen requiere un proyecto. El registro detallado lista cada ingreso y gasto; sin proyecto incluye todos.': 'The summary requires a project. The detailed ledger lists every income and expense; with no project it includes all of them.',
+  'Exportar Excel': 'Export Excel',
+  'Exportar PDF': 'Export PDF',
   'Horas de los últimos días': 'Hours of the last days',
   'Gráfico de barras de horas por día': 'Bar chart of hours per day',
   'Mapa de obras': 'Sites map',

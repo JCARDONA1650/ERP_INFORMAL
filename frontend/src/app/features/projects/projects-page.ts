@@ -15,6 +15,8 @@ import {
 import { apiErrorMessage } from '../../core/util/http-error';
 import { formatMoney } from '../../core/util/money';
 
+const PAGE_SIZE = 25;
+
 @Component({
   selector: 'app-projects-page',
   imports: [ReactiveFormsModule, SiteMap],
@@ -28,6 +30,12 @@ export class ProjectsPage implements OnInit {
 
   protected readonly money = formatMoney;
   protected readonly projects = signal<Project[]>([]);
+  protected readonly page = signal(1);
+  protected readonly totalPages = computed(() => Math.max(1, Math.ceil(this.projects().length / PAGE_SIZE)));
+  protected readonly pageItems = computed(() => {
+    const start = (Math.min(this.page(), this.totalPages()) - 1) * PAGE_SIZE;
+    return this.projects().slice(start, start + PAGE_SIZE);
+  });
   protected readonly supervisors = signal<SupervisorOption[]>([]);
   protected readonly employees = signal<Employee[]>([]);
   protected readonly loading = signal(false);

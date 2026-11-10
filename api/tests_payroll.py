@@ -260,3 +260,13 @@ class PayrollApiTests(APITestCase):
         self.assertEqual(self.client.get(URL + "?status=CLOSED").data["count"], 1)
         self.assertEqual(self.client.get(URL + "?status=OPEN").data["count"], 1)
         self.assertEqual(self.client.get(URL + "?project=abc").data["count"], 0)
+
+    def test_filtro_por_mes_incluye_periodos_que_se_cruzan(self):
+        self.create_period(start_date="2026-10-26", end_date="2026-11-01")  # cruza octubre y noviembre
+        self.create_period(start_date="2026-11-09", end_date="2026-11-15")
+        self.create_period(start_date="2026-12-01", end_date="2026-12-07")
+        self.assertEqual(self.client.get(URL + "?month=2026-11").data["count"], 2)
+        self.assertEqual(self.client.get(URL + "?month=2026-10").data["count"], 1)
+        self.assertEqual(self.client.get(URL + "?month=2026-12").data["count"], 1)
+        self.assertEqual(self.client.get(URL + "?month=2027-01").data["count"], 0)
+        self.assertEqual(self.client.get(URL + "?month=xx").status_code, 400)
