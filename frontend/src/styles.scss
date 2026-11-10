@@ -1,3 +1,6 @@
+/* CSS de Leaflet (mapas). Se importa aquí para que lo tome también un ng serve ya iniciado. */
+@use 'leaflet/dist/leaflet';
+
 @use './styles/data-ui';
 
 /* Tokens globales de INFORMAL ERP (misma identidad que el login de Django). */

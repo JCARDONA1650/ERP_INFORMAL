@@ -1,7 +1,7 @@
 .shell {
   min-height: 100dvh;
   display: grid;
-  grid-template-columns: 240px 1fr;
+  grid-template-columns: 240px minmax(0, 1fr);
 
   &__side {
     padding: 1.25rem 1rem;
@@ -46,6 +46,7 @@
 
   &__main {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto 1fr auto;
     min-width: 0;
   }
