@@ -3,10 +3,14 @@
 #   docker compose -f docker-compose.prod.yml up -d --build
 #
 # nginx solo escucha en 127.0.0.1: el HTTPS lo termina un proxy delante (Caddy, Traefik...).
+#
+# Nombre de proyecto fijo: evita que, si se levanta sin `-p`, Compose use el nombre
+# por defecto (el de la carpeta) y reutilice los volúmenes de docker-compose.yml (desarrollo).
+name: erp_informal_prod
+
 services:
   db:
     image: postgres:16-alpine
-    container_name: erp_informal_db
     env_file: .env
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -19,7 +23,6 @@ services:
 
   web:
     build: .
-    container_name: erp_informal_web
     env_file: .env
     environment:
       # Fuerza producción aunque el .env diga otra cosa.
@@ -39,7 +42,6 @@ services:
     build:
       context: .
       dockerfile: deploy/nginx/Dockerfile
-    container_name: erp_informal_nginx
     depends_on:
       web:
         condition: service_healthy
