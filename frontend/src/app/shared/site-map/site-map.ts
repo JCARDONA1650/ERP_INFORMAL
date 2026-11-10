@@ -23,6 +23,12 @@ export interface MapMarker extends MapPoint {
   ok?: boolean | null;
 }
 
+/** Zona de obra adicional (solo lectura), p. ej. los proyectos del Inicio. */
+export interface MapZone extends MapPoint {
+  radius: number;
+  label: string;
+}
+
 const TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 const ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>';
 const DEFAULT_VIEW: L.LatLngExpression = [27.8, -82.5]; // Florida, cuando aún no hay punto
@@ -55,6 +61,7 @@ export class SiteMap implements AfterViewInit, OnDestroy {
   readonly radius = input<number>(150);
   readonly editable = input(false);
   readonly markers = input<MapMarker[]>([]);
+  readonly zones = input<MapZone[]>([]);
   readonly height = input(280);
   readonly ariaLabel = input('Mapa de la zona de obra');
 
@@ -72,7 +79,7 @@ export class SiteMap implements AfterViewInit, OnDestroy {
   constructor() {
     effect(() => {
       if (!this.ready()) return;
-      this.draw(this.lat(), this.lng(), this.radius(), this.editable(), this.markers());
+      this.draw(this.lat(), this.lng(), this.radius(), this.editable(), this.markers(), this.zones());
     });
   }
 
@@ -104,6 +111,7 @@ export class SiteMap implements AfterViewInit, OnDestroy {
     radius: number,
     editable: boolean,
     markers: MapMarker[],
+    zones: MapZone[],
   ): void {
     const map = this.map;
     if (!map) return;
@@ -135,6 +143,14 @@ export class SiteMap implements AfterViewInit, OnDestroy {
       });
     }
 
+    for (const z of zones) {
+      const tip = document.createElement('span');
+      tip.textContent = z.label;
+      L.circle([z.lat, z.lng], { radius: z.radius, color: '#c9a84c', weight: 2, fillOpacity: 0.12 })
+        .bindTooltip(tip)
+        .addTo(this.extras);
+    }
+
     for (const m of markers) {
       const color = m.ok === true ? COLORS.ok : m.ok === false ? COLORS.bad : COLORS.none;
       const tip = document.createElement('span');
@@ -147,8 +163,9 @@ export class SiteMap implements AfterViewInit, OnDestroy {
     if (!fit) return;
     if (this.circle) {
       map.fitBounds(this.circle.getBounds(), { maxZoom: 18, padding: [24, 24] });
-    } else if (markers.length) {
-      map.fitBounds(L.latLngBounds(markers.map((m) => [m.lat, m.lng] as L.LatLngTuple)), {
+    } else if (markers.length || zones.length) {
+      const pts = [...markers, ...zones].map((m) => [m.lat, m.lng] as L.LatLngTuple);
+      map.fitBounds(L.latLngBounds(pts), {
         maxZoom: 17,
         padding: [24, 24],
       });

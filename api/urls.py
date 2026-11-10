@@ -4,6 +4,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 from . import views
 from .attendance import AttendanceViewSet
+from .dashboard import DashboardView
 from .employees import EmployeeViewSet
 from .finance import ExpenseViewSet, IncomeViewSet, ProjectFinanceSummaryView
 from .payroll import PayrollLineAdjustView, PayrollPeriodViewSet
@@ -39,6 +40,7 @@ urlpatterns = [
     path("reports/payroll/<int:pk>/<str:fmt>/", PayrollReportView.as_view(), name="report-payroll"),
     path("reports/attendance/<str:fmt>/", AttendanceReportView.as_view(), name="report-attendance"),
     path("reports/finance/<int:pk>/<str:fmt>/", FinanceReportView.as_view(), name="report-finance"),
+    path("dashboard/", DashboardView.as_view(), name="api-dashboard"),
     path("auth/change-password/", ChangePasswordView.as_view(), name="api-change-password"),
     path("users/supervisors/", SupervisorListView.as_view(), name="api-supervisors"),
     path("users/", UserListCreateView.as_view(), name="api-users"),

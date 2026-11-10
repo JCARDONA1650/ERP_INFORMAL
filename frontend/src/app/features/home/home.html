@@ -1,0 +1,100 @@
+<header class="page-head">
+  <h1>Hola, {{ user()?.full_name }}</h1>
+  <p class="muted">Resumen de hoy{{ isBackoffice() ? ' de todos los proyectos' : ' de tus proyectos' }}.</p>
+</header>
+
+@if (error(); as message) {
+  <p class="alert" role="alert">{{ message }}</p>
+}
+
+@if (data(); as d) {
+  <section class="cards" aria-label="Indicadores">
+    <a class="card" routerLink="/asistencia">
+      <span class="card__label">Presentes hoy</span>
+      <strong class="card__value">{{ d.attendance.present_today }}</strong>
+      <small>{{ d.attendance.open_shifts }} sin marcar salida</small>
+    </a>
+    <a class="card" [class.card--warn]="d.attendance.pending_review > 0" routerLink="/asistencia">
+      <span class="card__label">Pendientes de revisión</span>
+      <strong class="card__value">{{ d.attendance.pending_review }}</strong>
+      <small>{{ d.attendance.out_of_zone_today }} fuera de zona hoy</small>
+    </a>
+    @if (d.workers; as w) {
+      <a class="card" routerLink="/trabajadores">
+        <span class="card__label">Trabajadores activos</span>
+        <strong class="card__value">{{ w.active }}</strong>
+        <small>{{ w.inactive }} inactivos</small>
+      </a>
+    }
+    @if (d.payroll; as p) {
+      <a class="card" routerLink="/nomina">
+        <span class="card__label">Nóminas abiertas</span>
+        <strong class="card__value">{{ p.open_periods }}</strong>
+        <small>por cerrar</small>
+      </a>
+    }
+  </section>
+
+  @if (d.finance; as f) {
+    <section class="panel" aria-label="Resumen financiero">
+      <h3>Finanzas (proyectos activos)</h3>
+      @for (c of currencies(); track c) {
+        <p class="fin">
+          <strong>{{ c }}</strong>
+          Ingresos {{ amount(f.incomes, c) }} · Gastos {{ amount(f.expenses, c) }}
+        </p>
+      } @empty {
+        <p class="muted">Aún no hay movimientos.</p>
+      }
+      <a routerLink="/finanzas">Ver detalle</a>
+    </section>
+  }
+
+  <section class="panel" aria-label="Horas de los últimos días">
+    <h3>Horas netas, últimos 7 días</h3>
+    <div class="bars" role="img" aria-label="Gráfico de barras de horas por día">
+      @for (b of bars(); track b.label) {
+        <div class="bars__col">
+          <span class="bars__value">{{ b.hours }}</span>
+          <div class="bars__bar" [style.height.%]="b.pct"></div>
+          <span class="bars__label">{{ b.label }}</span>
+        </div>
+      }
+    </div>
+  </section>
+
+  <section class="panel" aria-label="Mapa de obras">
+    <h3>Mapa de obras y marcaciones de hoy</h3>
+    @if (zones().length === 0 && markers().length === 0) {
+      <p class="muted">Ningún proyecto tiene zona definida todavía. Defínela en Proyectos.</p>
+    } @else {
+      <p class="muted legend">
+        <span class="dot dot--ok"></span> dentro de zona
+        <span class="dot dot--bad"></span> fuera de zona
+        <span class="dot dot--none"></span> sin dato
+      </p>
+      <app-site-map [zones]="zones()" [markers]="markers()" [height]="360" ariaLabel="Mapa de obras y marcaciones de hoy" />
+    }
+  </section>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Proyecto</th><th class="num">Trabajadores</th><th class="num">Presentes hoy</th><th class="num">Por revisar</th><th>Zona</th></tr>
+      </thead>
+      <tbody>
+        @for (p of d.projects; track p.id) {
+          <tr>
+            <td>{{ p.name }}</td>
+            <td class="num">{{ p.workers }}</td>
+            <td class="num">{{ p.present_today }}</td>
+            <td class="num">{{ p.pending_review }}</td>
+            <td>{{ p.site ? p.site.radius_m + ' m · ' + (p.site.out_of_zone_policy === 'block' ? 'rechaza' : 'revisión') : 'Sin zona' }}</td>
+          </tr>
+        } @empty {
+          <tr><td colspan="5" class="empty">No tienes proyectos asignados.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
