@@ -22,7 +22,9 @@ USER appuser
 EXPOSE 9000
 
 # Estado del servicio (responde 503 si la base de datos no contesta).
+# Se manda un Host válido (el primero de DJANGO_ALLOWED_HOSTS) para no depender
+# de agregar 127.0.0.1 a ALLOWED_HOSTS, que nginx reenviaría tal cual desde fuera.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9000/api/health/', timeout=4)" || exit 1
+    CMD python -c "import os, urllib.request; h = (os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost').split(',')[0].strip().lstrip('.') or 'localhost'); urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:9000/api/health/', headers={'Host': h}), timeout=4)" || exit 1
 
-CMD ["waitress-serve", "--listen=0.0.0.0:9000", "core.wsgi:application"]
+CMD ["python", "wsgi_serve.py"]

@@ -28,7 +28,7 @@ services:
       db:
         condition: service_healthy
     # Aplica migraciones y arranca el servidor de producción (sin recarga ni código montado).
-    command: sh -c "python manage.py migrate --noinput && waitress-serve --listen=0.0.0.0:9000 core.wsgi:application"
+    command: sh -c "python manage.py migrate --noinput && python wsgi_serve.py"
     volumes:
       - media_data:/app/media
     expose:
