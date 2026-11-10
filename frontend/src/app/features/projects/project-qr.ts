@@ -37,11 +37,33 @@ export class ProjectQr implements OnInit, OnDestroy {
     this.error.set(null);
     this.revoke();
     this.selected.set(project);
+    this.link.set(null);
+    this.copied.set(false);
     this.api.qr(project.id).subscribe({
       next: (blob) => {
         if (this.selected()?.id === project.id) this.qrUrl.set(URL.createObjectURL(blob));
       },
       error: () => this.error.set('No se pudo generar el QR.'),
+    });
+  }
+
+  /** Enlace del día para compartir por WhatsApp o probar la marcación sin escanear. */
+  protected readonly link = signal<string | null>(null);
+  protected readonly copied = signal(false);
+
+  protected copyLink(project: ProjectSummary): void {
+    this.copied.set(false);
+    this.api.qrLink(project.id).subscribe({
+      next: async ({ url }) => {
+        this.link.set(url);
+        try {
+          await navigator.clipboard.writeText(url);
+          this.copied.set(true);
+        } catch {
+          this.copied.set(false); // sin permiso de portapapeles: queda visible para copiar a mano
+        }
+      },
+      error: () => this.error.set('No se pudo obtener el enlace.'),
     });
   }
 

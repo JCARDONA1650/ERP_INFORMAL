@@ -192,6 +192,16 @@ class ProjectQrApiTests(APITestCase):
         self.assertEqual(r["Cache-Control"], "no-store")
         self.assertTrue(r.content.startswith(b"\x89PNG"))
 
+    def test_enlace_de_marcacion_para_supervisor_de_la_obra(self):
+        self.client.force_authenticate(self.sup)
+        r = self.client.get(f"/api/projects/{self.project.pk}/qr-link/")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn(f"/marcar/{self.project.slug}?t=", r.data["url"])
+
+    def test_otro_supervisor_no_obtiene_el_enlace(self):
+        self.client.force_authenticate(self.other)
+        self.assertEqual(self.client.get(f"/api/projects/{self.project.pk}/qr-link/").status_code, 404)
+
     def test_otro_supervisor_no_obtiene_el_qr(self):
         self.client.force_authenticate(self.other)
         self.assertEqual(self.client.get(f"/api/projects/{self.project.pk}/qr/").status_code, 404)

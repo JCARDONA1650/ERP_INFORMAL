@@ -79,6 +79,11 @@ export class ProjectsService {
     return this.http.get<SupervisorOption[]>(`${API_URL}/users/supervisors/`);
   }
 
+  /** Enlace de marcación del día (lo que codifica el QR). */
+  qrLink(id: number): Observable<{ url: string }> {
+    return this.http.get<{ url: string }>(`${API_URL}/projects/${id}/qr-link/`);
+  }
+
   /** QR del día (PNG). Requiere sesión, por eso se pide como blob. */
   qr(id: number): Observable<Blob> {
     return this.http.get(`${API_URL}/projects/${id}/qr/`, { responseType: 'blob' });

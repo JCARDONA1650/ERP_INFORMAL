@@ -8,6 +8,7 @@ from django.db import transaction
 from django.http import HttpResponse
 from rest_framework import mixins, serializers, viewsets
 from rest_framework.decorators import action
+from rest_framework.response import Response
 
 from accounts.roles import ADMINISTRADOR, RRHH, SUPERVISOR, user_has_role
 from projects.models import Project, ProjectSite
@@ -110,14 +111,22 @@ class ProjectViewSet(
             qs = qs.filter(active=(active == "true"))
         return qs.select_related("site").prefetch_related("supervisors", "employees").order_by("name")
 
-    @action(detail=True, methods=["get"], url_path="qr")
-    def qr(self, request, pk=None):
-        """PNG del QR de marcación del día. Lo ve el Supervisor de la obra o el backoffice."""
-        project = self.get_object()
-        link = (
+    @staticmethod
+    def _marking_link(project) -> str:
+        return (
             f"{settings.FRONTEND_BASE_URL}/marcar/{project.slug}?"
             + urlencode({"t": make_qr_token(project)})
         )
+
+    @action(detail=True, methods=["get"], url_path="qr-link")
+    def qr_link(self, request, pk=None):
+        """Enlace de marcación del día (el mismo que codifica el QR), para compartirlo o copiarlo."""
+        return Response({"url": self._marking_link(self.get_object())})
+
+    @action(detail=True, methods=["get"], url_path="qr")
+    def qr(self, request, pk=None):
+        """PNG del QR de marcación del día. Lo ve el Supervisor de la obra o el backoffice."""
+        link = self._marking_link(self.get_object())
         buffer = BytesIO()
         qrcode.make(link, box_size=10, border=4).save(buffer, format="PNG")
         response = HttpResponse(buffer.getvalue(), content_type="image/png")

@@ -25,7 +25,13 @@
       <h2>{{ project.name }}</h2>
       @if (qrUrl(); as url) {
         <img [src]="url" alt="Código QR de marcación de {{ project.name }}" />
-        <button class="btn btn--primary no-print" type="button" (click)="print()">Imprimir</button>
+        <div class="actions no-print">
+          <button class="btn btn--primary" type="button" (click)="print()">Imprimir</button>
+          <button class="btn btn--ghost" type="button" (click)="copyLink(project)">{{ copied() ? 'Enlace copiado' : 'Copiar enlace' }}</button>
+        </div>
+        @if (link(); as url) {
+          <input class="no-print link" type="text" readonly [value]="url" aria-label="Enlace de marcación del día" />
+        }
       } @else {
         <p class="muted">Generando…</p>
       }

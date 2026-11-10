@@ -40,6 +40,27 @@ describe('ProjectQr', () => {
     expect(el.querySelector('.qr img')?.getAttribute('src')).toBe('blob:qr');
   });
 
+  it('copia el enlace de marcación del día', async () => {
+    const write = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: write } });
+    const fixture = TestBed.createComponent(ProjectQr);
+    fixture.detectChanges();
+    http.expectOne('/api/projects/').flush({
+      count: 1, next: null, previous: null, results: [{ id: 1, name: 'Montego', slug: 'montego', active: true }],
+    });
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    (el.querySelector('.list__item') as HTMLButtonElement).click();
+    http.expectOne('/api/projects/1/qr/').flush(new Blob(['x'], { type: 'image/png' }));
+    fixture.detectChanges();
+    (Array.from(el.querySelectorAll('button')).find((b) => b.textContent?.includes('Copiar enlace')) as HTMLButtonElement).click();
+    http.expectOne('/api/projects/1/qr-link/').flush({ url: 'http://x/marcar/montego?t=abc' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(write).toHaveBeenCalledWith('http://x/marcar/montego?t=abc');
+    expect((el.querySelector('input.link') as HTMLInputElement).value).toContain('/marcar/montego');
+  });
+
   it('informa si el usuario no tiene proyectos', () => {
     const fixture = TestBed.createComponent(ProjectQr);
     fixture.detectChanges();
