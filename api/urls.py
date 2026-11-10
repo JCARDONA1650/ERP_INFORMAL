@@ -10,7 +10,13 @@ from .payroll import PayrollLineAdjustView, PayrollPeriodViewSet
 from .projects import ProjectViewSet
 from .reports import AttendanceReportView, FinanceReportView, PayrollReportView
 from .scan import ScanContextView, ScanView
-from .users import SupervisorListView
+from .users import (
+    ChangePasswordView,
+    SupervisorListView,
+    UserDetailView,
+    UserListCreateView,
+    UserResetPasswordView,
+)
 
 router = DefaultRouter()
 router.include_root_view = False
@@ -33,6 +39,10 @@ urlpatterns = [
     path("reports/payroll/<int:pk>/<str:fmt>/", PayrollReportView.as_view(), name="report-payroll"),
     path("reports/attendance/<str:fmt>/", AttendanceReportView.as_view(), name="report-attendance"),
     path("reports/finance/<int:pk>/<str:fmt>/", FinanceReportView.as_view(), name="report-finance"),
+    path("auth/change-password/", ChangePasswordView.as_view(), name="api-change-password"),
     path("users/supervisors/", SupervisorListView.as_view(), name="api-supervisors"),
+    path("users/", UserListCreateView.as_view(), name="api-users"),
+    path("users/<int:pk>/", UserDetailView.as_view(), name="api-user-detail"),
+    path("users/<int:pk>/reset-password/", UserResetPasswordView.as_view(), name="api-user-reset"),
     path("", include(router.urls)),
 ]

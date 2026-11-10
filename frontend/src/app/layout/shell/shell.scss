@@ -67,6 +67,12 @@
     }
   }
 
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
   &__content {
     padding: 1.5rem;
   }

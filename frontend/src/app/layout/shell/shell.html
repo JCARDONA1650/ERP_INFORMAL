@@ -14,7 +14,10 @@
         <strong>{{ user()?.full_name }}</strong>
         <small>{{ user()?.roles?.join(' · ') }}</small>
       </div>
-      <button class="btn btn--ghost" type="button" (click)="logout()">Cerrar sesión</button>
+      <div class="shell__actions">
+        <a class="btn btn--ghost" routerLink="/cambiar-clave">Cambiar contraseña</a>
+        <button class="btn btn--ghost" type="button" (click)="logout()">Cerrar sesión</button>
+      </div>
     </header>
 
     <main class="shell__content">

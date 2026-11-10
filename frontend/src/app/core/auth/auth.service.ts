@@ -47,6 +47,16 @@ export class AuthService {
       );
   }
 
+  /** Cambia la contraseña propia; al terminar, la sesión deja de estar bloqueada. */
+  changePassword(current: string, next: string): Observable<void> {
+    return this.http
+      .post(`${API_URL}/auth/change-password/`, { current_password: current, new_password: next })
+      .pipe(
+        tap(() => this._user.update((u) => (u ? { ...u, must_change_password: false } : u))),
+        map(() => undefined),
+      );
+  }
+
   /** Recupera la sesión al arrancar la app a partir del refresh token guardado. */
   restoreSession(): Observable<boolean> {
     if (!this.hasRefreshToken()) return of(false);

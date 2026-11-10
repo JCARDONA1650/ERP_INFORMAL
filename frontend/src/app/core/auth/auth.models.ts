@@ -5,6 +5,8 @@ export interface User {
   username: string;
   full_name: string;
   roles: Role[];
+  /** Contraseña temporal: debe cambiarla antes de usar la app. */
+  must_change_password?: boolean;
 }
 
 export interface LoginResponse {

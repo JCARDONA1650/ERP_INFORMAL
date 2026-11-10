@@ -157,7 +157,7 @@ from datetime import timedelta  # noqa: E402
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "accounts.authentication.ForcedChangeJWTAuthentication",
     ],
     # Todo endpoint exige sesión JWT salvo que declare lo contrario.
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],

@@ -4,6 +4,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from accounts.roles import roles_of
+from accounts.user_admin import must_change_password
 
 logger = logging.getLogger("accounts")
 
@@ -13,9 +14,13 @@ class UserSerializer(serializers.Serializer):
     username = serializers.CharField()
     full_name = serializers.SerializerMethodField()
     roles = serializers.SerializerMethodField()
+    must_change_password = serializers.SerializerMethodField()
 
     def get_full_name(self, user) -> str:
         return user.get_full_name() or user.get_username()
+
+    def get_must_change_password(self, user) -> bool:
+        return must_change_password(user)
 
     def get_roles(self, user) -> list[str]:
         return roles_of(user)

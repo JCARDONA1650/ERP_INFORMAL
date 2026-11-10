@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 
-import { authGuard, guestGuard, roleGuard } from './core/auth/auth.guards';
+import { authGuard, guestGuard, roleGuard, sessionGuard } from './core/auth/auth.guards';
 
 export const routes: Routes = [
   {
@@ -8,6 +8,13 @@ export const routes: Routes = [
     canActivate: [guestGuard],
     title: 'Iniciar sesión · INFORMAL ERP',
     loadComponent: () => import('./features/auth/login/login').then((m) => m.Login),
+  },
+  {
+    path: 'cambiar-clave',
+    canActivate: [sessionGuard],
+    title: 'Cambiar contraseña · INFORMAL ERP',
+    loadComponent: () =>
+      import('./features/auth/change-password/change-password').then((m) => m.ChangePassword),
   },
   {
     // Pública: el trabajador marca sin usuario; el QR firmado del día es su llave.
@@ -75,6 +82,12 @@ export const routes: Routes = [
         canActivate: [roleGuard('Administrador', 'RRHH')],
         title: 'Trabajadores · INFORMAL ERP',
         loadComponent: () => import('./features/employees/employees-page').then((m) => m.EmployeesPage),
+      },
+      {
+        path: 'usuarios',
+        canActivate: [roleGuard('Administrador')],
+        title: 'Usuarios · INFORMAL ERP',
+        loadComponent: () => import('./features/users/users-page').then((m) => m.UsersPage),
       },
       {
         path: 'forbidden',

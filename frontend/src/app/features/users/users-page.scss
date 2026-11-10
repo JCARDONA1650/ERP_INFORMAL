@@ -1,0 +1,18 @@
+.credential {
+  border-color: var(--accent);
+
+  h3 {
+    margin: 0 0 0.5rem;
+  }
+
+  &__value {
+    display: inline-block;
+    padding: 0.5rem 0.8rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 1.1rem;
+    letter-spacing: 0.06em;
+    user-select: all;
+  }
+}

@@ -1,0 +1,87 @@
+<header class="page-head">
+  <h1>Usuarios</h1>
+  <p class="muted">
+    Crea usuarios, cambia su rol, desactívalos o restablece su contraseña. Las contraseñas temporales
+    obligan a cambiarlas al primer ingreso. El rol Administrador solo lo asigna el Super Admin.
+  </p>
+</header>
+
+<div class="form-row" style="margin-bottom: 1rem">
+  <button class="btn btn--primary" type="button" (click)="openNew()">Nuevo usuario</button>
+</div>
+
+@if (error(); as message) {
+  <p class="alert" role="alert">{{ message }}</p>
+}
+
+@if (credential(); as c) {
+  <section class="panel credential" role="status" aria-label="Contraseña temporal">
+    <h3>Contraseña temporal de {{ c.username }}</h3>
+    <p class="muted">Entrégala por un canal seguro. No se volverá a mostrar y deberá cambiarla al ingresar.</p>
+    <p><code class="credential__value">{{ c.password }}</code></p>
+    <div class="form-row">
+      <button class="btn btn--ghost btn--sm" type="button" (click)="copyPassword()">{{ copied() ? 'Copiada' : 'Copiar' }}</button>
+      <button class="btn btn--primary btn--sm" type="button" (click)="dismissCredential()">Listo, ya la anoté</button>
+    </div>
+  </section>
+}
+
+@if (formOpen()) {
+  <form class="panel" aria-label="Formulario de usuario" [formGroup]="form" (ngSubmit)="save()">
+    <h3>{{ editing() ? 'Editar usuario' : 'Nuevo usuario' }}</h3>
+    <div class="form-row">
+      <label>Usuario <input type="text" maxlength="150" autocomplete="off" formControlName="username" /></label>
+      <label>Nombre <input type="text" maxlength="150" formControlName="first_name" /></label>
+      <label>Apellido <input type="text" maxlength="150" formControlName="last_name" /></label>
+      <label>Correo (opcional) <input type="email" formControlName="email" /></label>
+      <label>
+        Rol
+        <select formControlName="role">
+          @for (r of roles(); track r) {
+            <option [value]="r">{{ r }}</option>
+          }
+        </select>
+      </label>
+    </div>
+    @if (!editing()) {
+      <p class="muted">Se generará una contraseña temporal que se mostrará una sola vez.</p>
+    }
+    <div class="form-row">
+      <button class="btn btn--primary" type="submit" [disabled]="saving()">Guardar</button>
+      <button class="btn btn--ghost" type="button" (click)="closeForm()">Cancelar</button>
+    </div>
+    @if (formError(); as message) {
+      <p class="alert" style="margin: 0.75rem 0 0" role="alert">{{ message }}</p>
+    }
+  </form>
+}
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th></th></tr>
+    </thead>
+    <tbody>
+      @for (u of users(); track u.id) {
+        <tr>
+          <td>{{ u.username }}</td>
+          <td>{{ (u.first_name + ' ' + u.last_name).trim() || '—' }}</td>
+          <td>{{ u.role ?? 'Sin rol' }}</td>
+          <td>
+            @if (u.is_active) { <span class="badge badge--ok">Activo</span> } @else { <span class="badge">Inactivo</span> }
+            @if (u.must_change_password) { <span class="badge">Clave temporal</span> }
+          </td>
+          <td class="row-actions">
+            @if (u.can_manage) {
+              <button class="btn btn--ghost btn--sm" type="button" (click)="edit(u)">Editar</button>
+              <button class="btn btn--ghost btn--sm" type="button" (click)="resetPassword(u)">Restablecer clave</button>
+              <button class="btn btn--ghost btn--sm" type="button" (click)="toggleActive(u)">{{ u.is_active ? 'Desactivar' : 'Activar' }}</button>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr><td colspan="5" class="empty">{{ loading() ? 'Cargando…' : 'No hay usuarios.' }}</td></tr>
+      }
+    </tbody>
+  </table>
+</div>

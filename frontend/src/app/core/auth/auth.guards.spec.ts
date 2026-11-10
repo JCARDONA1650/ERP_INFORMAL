@@ -3,7 +3,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, UrlTree, provideRouter } from '@angular/router';
 
-import { authGuard, guestGuard, roleGuard, safeReturnUrl } from './auth.guards';
+import { authGuard, guestGuard, roleGuard, safeReturnUrl, sessionGuard } from './auth.guards';
 import { AuthService } from './auth.service';
 
 const state = (url: string) => ({ url }) as RouterStateSnapshot;
@@ -37,6 +37,13 @@ describe('guards', () => {
   it('authGuard deja pasar con sesión', () => {
     setUser(['Supervisor']);
     expect(run(authGuard)).toBe(true);
+  });
+
+  it('authGuard envía a cambiar la contraseña temporal antes que a cualquier pantalla', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (auth as any)._user.set({ id: 1, username: 'u', full_name: 'U', roles: ['RRHH'], must_change_password: true });
+    expect(router.serializeUrl(run(authGuard, '/nomina') as UrlTree)).toBe('/cambiar-clave');
+    expect(run(sessionGuard, '/cambiar-clave')).toBe(true);
   });
 
   it('guestGuard redirige al inicio si ya hay sesión', () => {
