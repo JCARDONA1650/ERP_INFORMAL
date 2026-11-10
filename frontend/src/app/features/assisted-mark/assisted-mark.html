@@ -1,0 +1,86 @@
+<h2>Marcar por un trabajador</h2>
+<p class="muted">
+  Para trabajadores sin celular: busca al trabajador en el proyecto y registra su ingreso o salida con una foto
+  tomada en este momento. Queda registrado quién hizo la marcación.
+</p>
+
+@if (loading()) {
+  <p class="muted" role="status">Cargando…</p>
+} @else if (projects().length === 0) {
+  <p class="muted">No tienes proyectos activos asignados.</p>
+} @else {
+  @if (success(); as message) {
+    <p class="notice notice--ok" role="status">{{ message }}</p>
+  }
+  @if (error(); as message) {
+    <p class="notice notice--error" role="alert">{{ message }}</p>
+  }
+
+  <form class="assisted" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <label>
+      Proyecto
+      <select formControlName="project" (change)="onProject($event)">
+        <option [ngValue]="null" disabled>Selecciona…</option>
+        @for (p of projects(); track p.id) {
+          <option [ngValue]="p.id">{{ p.name }}</option>
+        }
+      </select>
+    </label>
+
+    @if (selected(); as project) {
+      @if (project.site) {
+        <div class="assisted__zone">
+          @if (project.site.address) {
+            <p class="muted">📍 {{ project.site.address }}</p>
+          }
+          @if (zoneMessage(); as z) {
+            <p [class]="z.ok ? 'notice notice--ok' : 'notice notice--error'" role="status">{{ z.text }}</p>
+          }
+          <button class="btn btn--ghost" type="button" [disabled]="checking()" (click)="checkZone()">
+            {{ checking() ? 'Ubicando…' : 'Verificar mi ubicación' }}
+          </button>
+        </div>
+      }
+
+      <label>
+        Buscar trabajador
+        <input type="search" [value]="filter()" (input)="onFilter($event)" placeholder="Nombre…" />
+      </label>
+
+      <label>
+        Trabajador
+        <select formControlName="employee">
+          <option [ngValue]="null" disabled>Selecciona…</option>
+          @for (e of visibleEmployees(); track e.id) {
+            <option [ngValue]="e.id">{{ e.full_name }}</option>
+          }
+        </select>
+      </label>
+      @if (visibleEmployees().length === 0) {
+        <p class="muted">Sin trabajadores para mostrar.</p>
+      }
+
+      <fieldset class="assisted__actions">
+        <legend>Acción</legend>
+        <label class="check"><input type="radio" value="in" formControlName="action" /> Ingreso</label>
+        <label class="check"><input type="radio" value="out" formControlName="action" /> Salida</label>
+      </fieldset>
+
+      <div class="assisted__photo">
+        <span id="assisted-photo-label">
+          Foto de constancia @if (!photoRequired()) { (opcional) }
+        </span>
+        <app-camera-capture (photo)="onPhoto($event)" />
+      </div>
+
+      <p class="muted hint">
+        Se guardan la foto y la ubicación de este dispositivo en este momento. La marcación queda a nombre de quien
+        la registra.
+      </p>
+
+      <button class="btn btn--primary" type="submit" [disabled]="sending()">
+        {{ sending() ? 'Enviando…' : 'Registrar' }}
+      </button>
+    }
+  </form>
+}

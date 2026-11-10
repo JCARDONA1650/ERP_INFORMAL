@@ -16,7 +16,8 @@ MAX_PHOTO_BYTES = 5 * 1024 * 1024
 class ScanSerializer(serializers.Serializer):
     employee = serializers.IntegerField()
     action = serializers.ChoiceField(choices=["in", "out"])
-    photo = serializers.ImageField(required=True)  # constancia obligatoria
+    # Obligatoriedad según el proyecto (`Project.photo_required`): se exige en la vista.
+    photo = serializers.ImageField(required=False, allow_null=True)
     latitude = serializers.FloatField(required=False, allow_null=True, min_value=-90, max_value=90)
     longitude = serializers.FloatField(required=False, allow_null=True, min_value=-180, max_value=180)
     client_uuid = serializers.UUIDField(required=False)
@@ -24,7 +25,7 @@ class ScanSerializer(serializers.Serializer):
     device_name = serializers.CharField(required=False, allow_blank=True, max_length=100)
 
     def validate_photo(self, photo):
-        if photo.size > MAX_PHOTO_BYTES:
+        if photo is not None and photo.size > MAX_PHOTO_BYTES:
             raise serializers.ValidationError("La foto supera el máximo de 5 MB.")
         return photo
 
@@ -32,6 +33,12 @@ class ScanSerializer(serializers.Serializer):
         if (attrs.get("latitude") is None) != (attrs.get("longitude") is None):
             raise serializers.ValidationError("Envía latitud y longitud juntas o ninguna.")
         return attrs
+
+
+def require_photo_if_needed(project, data) -> None:
+    """Si el proyecto exige foto y no llegó, rechaza la marcación."""
+    if project.photo_required and not data.get("photo"):
+        raise serializers.ValidationError({"photo": "Este proyecto exige la foto de constancia."})
 
 
 class _PublicScanView(APIView):
@@ -69,7 +76,11 @@ class ScanContextView(_PublicScanView):
         site = getattr(project, "site", None)
         return Response(
             {
-                "project": {"name": project.name, "slug": project.slug},
+                "project": {
+                    "name": project.name,
+                    "slug": project.slug,
+                    "photo_required": project.photo_required,
+                },
                 # La zona se expone solo con QR válido: permite mostrar "dentro/fuera" al trabajador.
                 "site": None if site is None else {
                     "latitude": float(site.latitude),
@@ -89,6 +100,7 @@ class ScanView(_PublicScanView):
         serializer = ScanSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
+        require_photo_if_needed(project, data)
 
         employee = project.employees.filter(pk=data["employee"], active=True).first()
         if employee is None:
@@ -107,7 +119,7 @@ class ScanView(_PublicScanView):
                 latitude=data.get("latitude"),
                 longitude=data.get("longitude"),
                 device_name=data.get("device_name", ""),
-                photo=data["photo"],
+                photo=data.get("photo"),
             )
         except ScanError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_409_CONFLICT)

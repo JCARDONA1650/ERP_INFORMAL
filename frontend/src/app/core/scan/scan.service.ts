@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 import { API_URL } from '../config/api';
 
 export interface ScanContext {
-  project: { name: string; slug: string };
+  project: { name: string; slug: string; photo_required: boolean };
   /** Zona de obra y política fuera de zona; null si el proyecto no tiene zona. */
   site: {
     latitude: number;
@@ -20,7 +20,7 @@ export interface ScanContext {
 export interface ScanPayload {
   employee: number;
   action: 'in' | 'out';
-  photo: File;
+  photo: File | null;
   clientUuid: string;
   latitude?: number;
   longitude?: number;
@@ -48,7 +48,7 @@ export class ScanService {
     const body = new FormData();
     body.set('employee', String(p.employee));
     body.set('action', p.action);
-    body.set('photo', p.photo);
+    if (p.photo) body.set('photo', p.photo);
     body.set('client_uuid', p.clientUuid);
     body.set('device_ts', p.deviceTs);
     if (p.latitude !== undefined && p.longitude !== undefined) {

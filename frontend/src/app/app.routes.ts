@@ -46,6 +46,13 @@ export const routes: Routes = [
           import('./features/attendance/attendance-list').then((m) => m.AttendanceList),
       },
       {
+        path: 'marcar-asistido',
+        canActivate: [roleGuard('Supervisor', 'Administrador')],
+        title: 'Marcar por un trabajador · INFORMAL ERP',
+        loadComponent: () =>
+          import('./features/assisted-mark/assisted-mark').then((m) => m.AssistedMark),
+      },
+      {
         path: 'proyectos',
         pathMatch: 'full',
         canActivate: [roleGuard('Administrador', 'RRHH')],

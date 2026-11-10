@@ -1,12 +1,12 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, input, signal, viewChild } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ScanContext, ScanService } from '../../core/scan/scan.service';
 import { haversineM } from '../../core/util/geo';
-import { compressImage } from '../../core/util/image';
 import { RouterLink } from '@angular/router';
 
+import { CameraCapture } from '../../shared/camera-capture/camera-capture';
 import { AppFooter } from '../../shared/footer/app-footer';
 import { Logo } from '../../shared/logo/logo';
 import { MapMarker, SiteMap } from '../../shared/site-map/site-map';
@@ -15,7 +15,7 @@ type Status = 'loading' | 'ready' | 'invalid';
 
 @Component({
   selector: 'app-mark',
-  imports: [ReactiveFormsModule, SiteMap, Logo, AppFooter, RouterLink],
+  imports: [ReactiveFormsModule, SiteMap, Logo, AppFooter, RouterLink, CameraCapture],
   templateUrl: './mark.html',
   styleUrl: './mark.scss',
 })
@@ -32,7 +32,8 @@ export class Mark implements OnInit {
   protected readonly sending = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly success = signal<string | null>(null);
-  protected readonly photoName = signal<string | null>(null);
+  protected readonly photoRequired = computed(() => this.context()?.project?.photo_required ?? true);
+  private readonly camera = viewChild(CameraCapture);
 
   protected readonly form = this.fb.group({
     employee: this.fb.control<number | null>(null, Validators.required),
@@ -87,24 +88,25 @@ export class Mark implements OnInit {
     this.zone.set({ inside: distance <= site.radius_m, distance, lat: latitude, lng: longitude });
   }
 
-  protected onPhoto(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0] ?? null;
+  /** La foto llega de la cámara en vivo (no hay selector de archivos). */
+  protected onPhoto(file: File | null): void {
     this.photo = file;
-    this.photoName.set(file?.name ?? null);
   }
 
   protected async submit(): Promise<void> {
     this.error.set(null);
     this.success.set(null);
-    if (this.form.invalid || !this.photo) {
+    const missingPhoto = this.photoRequired() && !this.photo;
+    if (this.form.invalid || missingPhoto) {
       this.form.markAllAsTouched();
-      this.error.set(!this.photo ? 'Toma la foto de constancia.' : 'Selecciona tu nombre.');
+      this.error.set(missingPhoto ? 'Toma la foto de constancia.' : 'Selecciona tu nombre.');
       return;
     }
     if (this.sending()) return;
     this.sending.set(true);
 
-    const [photo, coords] = await Promise.all([compressImage(this.photo), this.locate()]);
+    const photo = this.photo;
+    const coords = await this.locate();
     this.clientUuid ??= crypto.randomUUID();
     const { employee, action } = this.form.getRawValue();
 
@@ -127,7 +129,7 @@ export class Mark implements OnInit {
           );
           this.clientUuid = null;
           this.photo = null;
-          this.photoName.set(null);
+          this.camera()?.reset();
           this.form.reset({ employee: null, action: 'in' });
         },
         error: (err: unknown) => {

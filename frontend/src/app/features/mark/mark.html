@@ -76,17 +76,10 @@
           </fieldset>
 
           <div class="field">
-            <label for="photo">Foto de constancia</label>
-            <input
-              id="photo"
-              type="file"
-              accept="image/*"
-              capture="environment"
-              (change)="onPhoto($event)"
-            />
-            @if (photoName(); as name) {
-              <span class="field__hint">{{ name }}</span>
-            }
+            <span class="field__label" id="photo-label">
+              Foto de constancia @if (!photoRequired()) { (opcional) }
+            </span>
+            <app-camera-capture #cam aria-labelledby="photo-label" (photo)="onPhoto($event)" />
           </div>
 
           <p class="mark__consent">

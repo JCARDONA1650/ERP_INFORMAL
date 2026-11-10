@@ -1,0 +1,66 @@
+.assisted {
+  display: grid;
+  gap: 1rem;
+  max-width: 480px;
+
+  label {
+    display: grid;
+    gap: 0.35rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  &__zone,
+  &__photo {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 1.5rem;
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+
+    legend {
+      padding: 0 0.4rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+  }
+}
+
+.check {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.notice {
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+
+  &--ok {
+    border: 1px solid #3f8f5f;
+    background: rgba(63, 143, 95, 0.14);
+    color: #9ee0b8;
+  }
+
+  &--error {
+    border: 1px solid var(--danger);
+    background: var(--danger-soft);
+    color: #fca5a5;
+  }
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.8rem;
+}

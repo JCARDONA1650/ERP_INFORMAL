@@ -93,7 +93,8 @@
   gap: 0.4rem;
   margin-bottom: 1rem;
 
-  label {
+  label,
+  &__label {
     font-size: 0.85rem;
     color: var(--muted);
   }

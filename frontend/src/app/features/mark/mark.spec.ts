@@ -1,12 +1,14 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 
+import { CameraCapture } from '../../shared/camera-capture/camera-capture';
 import { Mark } from './mark';
 
 const CONTEXT = {
-  project: { name: 'Montego', slug: 'montego' },
+  project: { name: 'Montego', slug: 'montego', photo_required: true },
   employees: [{ id: 7, full_name: 'Ana Gomez' }],
 };
 
@@ -42,10 +44,10 @@ describe('Mark', () => {
     select.selectedIndex = [...select.options].findIndex((o) => o.textContent?.includes('Ana'));
     select.dispatchEvent(new Event('change'));
   };
+  /** La foto solo puede venir de la cámara en vivo: se simula lo que emite el componente. */
   const attachPhoto = () => {
-    const input = el.querySelector('#photo') as HTMLInputElement;
-    Object.defineProperty(input, 'files', { value: [new File(['x'], 'foto.jpg', { type: 'image/jpeg' })] });
-    input.dispatchEvent(new Event('change'));
+    const cam = fixture.debugElement.query(By.directive(CameraCapture)).componentInstance as CameraCapture;
+    cam.photo.emit(new File(['x'], 'constancia.jpg', { type: 'image/jpeg' }));
   };
   const submit = async () => {
     (el.querySelector('form') as HTMLFormElement).dispatchEvent(new Event('submit'));
@@ -111,6 +113,30 @@ describe('Mark', () => {
     await submit();
     fixture.detectChanges();
     expect(el.querySelector('[role="alert"]')?.textContent).toContain('foto');
+  });
+
+  it('no ofrece subir archivos: la foto solo viene de la cámara', async () => {
+    await setup();
+    expect(el.querySelector('input[type="file"]')).toBeNull();
+    expect(el.querySelector('app-camera-capture')).not.toBeNull();
+  });
+
+  it('si el proyecto no exige foto, marca sin ella', async () => {
+    TestBed.configureTestingModule({ imports: [Mark], providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()] });
+    http = TestBed.inject(HttpTestingController);
+    fixture = TestBed.createComponent(Mark);
+    fixture.componentRef.setInput('slug', 'montego');
+    fixture.componentRef.setInput('t', 'tok');
+    fixture.detectChanges();
+    ctxReq().flush({ ...CONTEXT, project: { ...CONTEXT.project, photo_required: false } });
+    fixture.detectChanges();
+    el = fixture.nativeElement as HTMLElement;
+    expect(el.textContent).toContain('(opcional)');
+    chooseAna();
+    await submit();
+    const req = postReq();
+    expect((req.request.body as FormData).has('photo')).toBe(false);
+    req.flush({ message: 'ok', duplicate: false, in_zone: null });
   });
 
   it('envía la marcación y muestra la confirmación', async () => {
