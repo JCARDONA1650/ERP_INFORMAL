@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
 import { Mark } from './mark';
 
@@ -20,7 +21,7 @@ describe('Mark', () => {
   const setup = async (contextStatus?: number) => {
     TestBed.configureTestingModule({
       imports: [Mark],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
     });
     http = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(Mark);
@@ -61,7 +62,7 @@ describe('Mark', () => {
   });
 
   it('con zona de obra indica si el trabajador está dentro o fuera', async () => {
-    TestBed.configureTestingModule({ imports: [Mark], providers: [provideHttpClient(), provideHttpClientTesting()] });
+    TestBed.configureTestingModule({ imports: [Mark], providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()] });
     http = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(Mark);
     fixture.componentRef.setInput('slug', 'montego');

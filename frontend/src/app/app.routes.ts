@@ -10,6 +10,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/login/login').then((m) => m.Login),
   },
   {
+    path: 'privacidad',
+    title: 'Política de datos · INFORMAL ERP',
+    loadComponent: () => import('./features/legal/privacy').then((m) => m.Privacy),
+  },
+  {
     path: 'cambiar-clave',
     canActivate: [sessionGuard],
     title: 'Cambiar contraseña · INFORMAL ERP',

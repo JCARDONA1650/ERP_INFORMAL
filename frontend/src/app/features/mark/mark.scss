@@ -55,6 +55,17 @@
     color: #fca5a5;
   }
 
+  &__consent {
+    margin: 0 0 0.75rem;
+    color: var(--muted);
+    font-size: 0.8rem;
+    line-height: 1.4;
+
+    a {
+      color: var(--muted);
+    }
+  }
+
   &__submit {
     width: 100%;
     min-height: 3rem;

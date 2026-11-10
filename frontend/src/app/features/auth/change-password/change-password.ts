@@ -5,9 +5,11 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { apiErrorMessage } from '../../../core/util/http-error';
 
+import { Logo } from '../../../shared/logo/logo';
+
 @Component({
   selector: 'app-change-password',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, Logo],
   templateUrl: './change-password.html',
   styleUrl: '../login/login.scss',
 })

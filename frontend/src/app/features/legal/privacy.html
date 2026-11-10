@@ -1,0 +1,123 @@
+<main class="privacy">
+  <div class="privacy__brand">
+    <app-logo [size]="44" />
+    <h1>Política de tratamiento de datos personales</h1>
+  </div>
+  <p class="muted">ERP INFORMAL · Versión 1.0 · Vigente desde noviembre de 2026 · Aplicable a organizaciones y personal en Florida (EE. UU.)</p>
+
+  <h2>1. Alcance y roles</h2>
+  <p>
+    Esta política regula los datos personales que trata ERP INFORMAL, un sistema de asistencia, nómina y control
+    financiero de obra. Distingue dos roles:
+  </p>
+  <ul>
+    <li>
+      <strong>Organización usuaria (responsable):</strong> la empresa que contrata al personal y decide para qué se usan
+      sus datos. Es el «covered entity» de la ley de Florida.
+    </li>
+    <li>
+      <strong>Jorge Cardona, Ing. Sistemas (proveedor del sistema):</strong> mantiene y procesa los datos por cuenta de la
+      organización usuaria. Es el «third-party agent» de la ley de Florida.
+    </li>
+  </ul>
+
+  <h2>2. Datos que se tratan</h2>
+  <ul>
+    <li><strong>Identificación y laborales:</strong> nombre completo, número de documento (opcional), cargo, tipo de pago y tarifa.</li>
+    <li><strong>Asistencia:</strong> fecha y hora de ingreso y salida, proyecto, dispositivo y origen de la marcación.</li>
+    <li><strong>Foto de constancia</strong> tomada al marcar.</li>
+    <li><strong>Geolocalización:</strong> latitud y longitud <strong>únicamente en el instante de marcar</strong>.</li>
+    <li><strong>Cuentas de usuario (personal administrativo):</strong> usuario, nombre, correo opcional, rol y registros de acceso.</li>
+    <li><strong>Bitácora:</strong> quién ajustó, cerró, descargó o cambió qué, y cuándo (nunca contraseñas).</li>
+  </ul>
+  <p>
+    No se tratan datos biométricos de identificación, historia clínica, números de cuenta bancaria ni números de
+    seguridad social dentro del sistema. Si la organización decide cargarlos, es su responsabilidad protegerlos
+    conforme a la sección 7.
+  </p>
+
+  <h2>3. Finalidades</h2>
+  <p>
+    (a) Validar la asistencia en la zona de trabajo; (b) calcular horas y nómina; (c) llevar el control de ingresos y
+    gastos por proyecto; (d) auditar cambios sensibles; (e) proteger la seguridad del sistema. Los datos no se venden,
+    no se usan para publicidad ni para perfilar personas, y no se comparten con terceros salvo obligación legal o
+    proveedores de infraestructura que traten los datos bajo las mismas medidas de seguridad.
+  </p>
+
+  <h2>4. Geolocalización y consentimiento</h2>
+  <p>
+    La ubicación es un dato sensible: la ley de Florida sobre seguridad de información personal (Fla. Stat. § 501.171)
+    la incluye entre los datos que, unidos al nombre de la persona, deben protegerse. Por eso:
+  </p>
+  <ul>
+    <li>
+      <strong>No hay seguimiento.</strong> El sistema no instala rastreadores ni consulta la posición del trabajador
+      fuera de la marcación, de acuerdo con la prohibición de rastrear a una persona sin su consentimiento
+      (Fla. Stat. § 934.425).
+    </li>
+    <li>
+      <strong>Consentimiento en cada marcación.</strong> Antes de registrar, la pantalla informa que se guardarán la
+      foto y la ubicación de ese instante; el trabajador es quien activa el GPS del navegador y pulsa «Registrar».
+    </li>
+    <li>
+      <strong>Negativa.</strong> Si el trabajador no comparte su ubicación, no se le puede registrar en proyectos que exigen
+      estar dentro de la zona; en ese caso debe avisar a su supervisor para que se gestione por la vía que defina la
+      organización, sin represalias por ejercer esta opción.
+    </li>
+    <li>
+      <strong>Uso limitado.</strong> La ubicación solo se usa para comparar la distancia con el punto de la obra y
+      decidir si la marcación es válida o queda para revisión.
+    </li>
+  </ul>
+
+  <h2>5. Quién accede a los datos</h2>
+  <p>
+    El acceso se limita por rol: el Supervisor solo ve los proyectos que tiene asignados; RRHH y el Administrador ven
+    trabajadores, asistencia y nómina; las finanzas del proyecto son del Administrador; la gestión de usuarios la hace el
+    Administrador (los Administradores los crea el Super Admin). Las descargas de reportes quedan registradas.
+  </p>
+
+  <h2>6. Conservación y eliminación</h2>
+  <p>
+    Los datos se conservan mientras sean necesarios para la nómina y las obligaciones laborales, contables y legales de
+    la organización. Los trabajadores no se eliminan, se desactivan, para conservar el historial de pagos. Cuando un
+    registro con información personal ya no deba conservarse, se elimina o se modifica para que quede ilegible, como exige
+    Fla. Stat. § 501.171(8). Las fotos de constancia deben depurarse según el plazo que fije la organización.
+  </p>
+
+  <h2>7. Seguridad</h2>
+  <p>
+    Se aplican «medidas razonables» de protección (Fla. Stat. § 501.171(2)): contraseñas almacenadas con hash y
+    contraseñas temporales de cambio obligatorio; sesiones con vencimiento y renovación controlada; permisos por rol;
+    límite de intentos; cabeceras de seguridad y conexión cifrada (HTTPS) en producción; y bitácora de acciones
+    sensibles. Las copias de seguridad de la base de datos son responsabilidad de la organización usuaria.
+  </p>
+
+  <h2>8. Incidentes de seguridad</h2>
+  <p>Ante un acceso no autorizado a datos personales en formato electrónico:</p>
+  <ul>
+    <li>El proveedor (Jorge Cardona) avisa a la organización usuaria lo antes posible y <strong>a más tardar 10 días</strong> después de confirmar o sospechar la brecha.</li>
+    <li>La organización notifica a las personas afectadas <strong>a más tardar 30 días</strong> después, por correo o por escrito, indicando la fecha estimada, los datos afectados y cómo contactarla.</li>
+    <li>Si la brecha afecta a <strong>500 o más personas en Florida</strong>, la organización avisa también al Departamento de Asuntos Legales (Florida Attorney General) en el mismo plazo de 30 días; y a las agencias de crédito si son más de 1.000.</li>
+    <li>La organización conserva por escrito la evaluación del incidente (mínimo 5 años cuando concluya que no requiere notificar).</li>
+  </ul>
+
+  <h2>9. Derechos de las personas</h2>
+  <p>
+    Cada persona puede pedir a su empleador: conocer qué datos suyos se tratan, corregirlos, que se le explique su uso y
+    retirar el consentimiento para la ubicación y la foto en marcaciones futuras (lo que puede implicar que su asistencia
+    deba registrarse por otra vía). La ley de Florida sobre privacidad digital (Digital Bill of Rights, Fla. Stat. ch. 501,
+    parte V) se dirige a grandes empresas tecnológicas y no obliga a esta organización por tamaño, pero esta política adopta
+    sus principios de transparencia y minimización. Para personas en Colombia aplican además sus derechos de habeas data
+    (Ley 1581 de 2012).
+  </p>
+
+  <h2>10. Contacto y cambios</h2>
+  <p>
+    Las solicitudes se dirigen al administrador de la organización usuaria, que puede escalarlas al proveedor del sistema:
+    Jorge Cardona · Ing. Sistemas. Esta política puede actualizarse; la versión vigente es la publicada en esta página.
+  </p>
+
+  <p><a routerLink="/">Volver</a></p>
+  <app-footer />
+</main>

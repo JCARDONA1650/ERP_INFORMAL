@@ -80,6 +80,13 @@ body {
   }
 }
 
+/* Marca: logo + nombre en una fila. */
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
 /* Mapa (Leaflet): el pin se dibuja con CSS para no depender de imágenes externas. */
 .site-pin {
   width: 18px;

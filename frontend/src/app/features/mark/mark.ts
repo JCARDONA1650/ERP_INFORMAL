@@ -5,13 +5,17 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ScanContext, ScanService } from '../../core/scan/scan.service';
 import { haversineM } from '../../core/util/geo';
 import { compressImage } from '../../core/util/image';
+import { RouterLink } from '@angular/router';
+
+import { AppFooter } from '../../shared/footer/app-footer';
+import { Logo } from '../../shared/logo/logo';
 import { MapMarker, SiteMap } from '../../shared/site-map/site-map';
 
 type Status = 'loading' | 'ready' | 'invalid';
 
 @Component({
   selector: 'app-mark',
-  imports: [ReactiveFormsModule, SiteMap],
+  imports: [ReactiveFormsModule, SiteMap, Logo, AppFooter, RouterLink],
   templateUrl: './mark.html',
   styleUrl: './mark.scss',
 })

@@ -6,9 +6,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { safeReturnUrl } from '../../../core/auth/auth.guards';
 import { AuthService } from '../../../core/auth/auth.service';
 
+import { AppFooter } from '../../../shared/footer/app-footer';
+import { Logo } from '../../../shared/logo/logo';
+
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, Logo, AppFooter],
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })

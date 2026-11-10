@@ -1,6 +1,6 @@
 <div class="shell">
   <aside class="shell__side">
-    <a class="shell__brand" routerLink="/inicio">INFORMAL <span>ERP</span></a>
+    <a class="shell__brand brand-row" routerLink="/inicio"><app-logo [size]="32" />INFORMAL <span>ERP</span></a>
     <nav aria-label="Principal">
       @for (item of items(); track item.path) {
         <a [routerLink]="item.path" routerLinkActive="is-active">{{ item.label }}</a>
@@ -23,5 +23,6 @@
     <main class="shell__content">
       <router-outlet />
     </main>
+    <app-footer />
   </div>
 </div>
