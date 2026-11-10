@@ -72,6 +72,10 @@ export class PayrollService {
     return this.http.post<PayrollPeriodDetail>(`${this.base}/periods/${id}/close/`, {});
   }
 
+  reopen(id: number): Observable<PayrollPeriodDetail> {
+    return this.http.post<PayrollPeriodDetail>(`${this.base}/periods/${id}/reopen/`, {});
+  }
+
   adjust(lineId: number, amount: string, reason: string): Observable<PayrollLine> {
     return this.http.post<PayrollLine>(`${this.base}/lines/${lineId}/adjust/`, { amount, reason });
   }

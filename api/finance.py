@@ -54,8 +54,15 @@ class IncomeSerializer(_MovementSerializer):
 class ExpenseSerializer(_MovementSerializer):
     class Meta:
         model = ProjectExpense
-        fields = _MovementSerializer.base_fields + ["category"]
-        read_only_fields = ["id", "created_by", "created_at"]
+        fields = _MovementSerializer.base_fields + ["category", "payroll_period"]
+        read_only_fields = ["id", "created_by", "created_at", "payroll_period"]
+
+    def validate(self, attrs):
+        if self.instance is not None and self.instance.payroll_period_id:
+            raise serializers.ValidationError(
+                "Este gasto lo genera la nómina; reabre el periodo para cambiarlo."
+            )
+        return super().validate(attrs)
 
 
 class _MovementViewSet(

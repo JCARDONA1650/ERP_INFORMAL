@@ -219,7 +219,13 @@
             <td>{{ m.description || '—' }}</td>
             <td class="num">{{ money(m.amount, m.currency) }}</td>
             <td>{{ m.created_by ?? '—' }}</td>
-            <td><button class="btn btn--ghost btn--sm" type="button" (click)="edit(m)">Editar</button></td>
+            <td>
+              @if (m.payroll_period) {
+                <span class="badge" title="Generado por el cierre de nómina; reabre el periodo para cambiarlo">Nómina</span>
+              } @else {
+                <button class="btn btn--ghost btn--sm" type="button" (click)="edit(m)">Editar</button>
+              }
+            </td>
           </tr>
         } @empty {
           <tr>

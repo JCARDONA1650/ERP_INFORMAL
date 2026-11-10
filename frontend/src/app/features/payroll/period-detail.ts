@@ -27,6 +27,7 @@ export class PeriodDetail implements OnInit {
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly confirmingClose = signal(false);
+  protected readonly confirmingReopen = signal(false);
   protected readonly adjusting = signal<PayrollLine | null>(null);
 
   protected readonly isOpen = computed(() => this.period()?.status === 'OPEN');
@@ -68,6 +69,19 @@ export class PeriodDetail implements OnInit {
   protected confirmClose(): void {
     this.confirmingClose.set(false);
     this.run(this.api.close(Number(this.id())));
+  }
+
+  protected askReopen(): void {
+    this.confirmingReopen.set(true);
+  }
+
+  protected cancelReopen(): void {
+    this.confirmingReopen.set(false);
+  }
+
+  protected confirmReopen(): void {
+    this.confirmingReopen.set(false);
+    this.run(this.api.reopen(Number(this.id())));
   }
 
   protected openAdjust(line: PayrollLine): void {

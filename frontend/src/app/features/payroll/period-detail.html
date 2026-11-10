@@ -31,16 +31,39 @@
     </div>
   }
 
+  @if (!isOpen() && canClose() && !confirmingReopen()) {
+    <div class="form-row" style="margin-bottom: 1rem">
+      <button class="btn btn--ghost" type="button" [disabled]="busy()" (click)="askReopen()">
+        Reabrir periodo
+      </button>
+    </div>
+  }
+
   @if (confirmingClose()) {
     <section class="panel" role="alertdialog" aria-labelledby="close-title">
       <h2 id="close-title">¿Cerrar este periodo?</h2>
       <p class="muted">
-        El cierre es irreversible: no se podrá recalcular, ajustar ni reabrir, y las jornadas del
-        rango quedarán bloqueadas para ajustes.
+        Al cerrar, la nómina se registra automáticamente como gasto «Nómina» en Finanzas (uno por
+        proyecto) y el periodo no admite más cambios. Solo un Administrador puede reabrirlo.
       </p>
       <div class="form-row" style="margin-top: 0.75rem">
-        <button class="btn btn--danger" type="button" [disabled]="busy()" (click)="confirmClose()">Sí, cerrar definitivamente</button>
+        <button class="btn btn--danger" type="button" [disabled]="busy()" (click)="confirmClose()">Sí, cerrar periodo</button>
         <button class="btn btn--ghost" type="button" (click)="cancelClose()">Cancelar</button>
+      </div>
+    </section>
+  }
+
+  @if (confirmingReopen()) {
+    <section class="panel" role="alertdialog" aria-labelledby="reopen-title">
+      <h2 id="reopen-title">¿Reabrir este periodo?</h2>
+      <p class="muted">
+        Se eliminarán los gastos «Nómina» que el cierre registró en Finanzas y podrás recalcular y
+        ajustar. Al cerrar de nuevo se registrarán otra vez con las cifras corregidas. La acción
+        queda en la bitácora.
+      </p>
+      <div class="form-row" style="margin-top: 0.75rem">
+        <button class="btn btn--danger" type="button" [disabled]="busy()" (click)="confirmReopen()">Sí, reabrir</button>
+        <button class="btn btn--ghost" type="button" (click)="cancelReopen()">Cancelar</button>
       </div>
     </section>
   }

@@ -8,7 +8,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from payroll.models import PayrollLine, PayrollPeriod
-from payroll.services import PayrollError, close_period, recalculate_period, set_adjustment
+from payroll.services import (
+    PayrollError,
+    close_period,
+    recalculate_period,
+    reopen_period,
+    set_adjustment,
+)
 from projects.models import Project
 
 from .permissions import IsAdministrador, IsBackoffice
@@ -125,6 +131,16 @@ class PayrollPeriodViewSet(
         period = self.get_object()
         try:
             close_period(period, request.user)
+        except PayrollError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_409_CONFLICT)
+        return self._detail(period)
+
+    @action(detail=True, methods=["post"], permission_classes=[IsAdministrador])
+    def reopen(self, request, pk=None):
+        """Reabre un periodo cerrado por error: borra los gastos que generó en Finanzas."""
+        period = self.get_object()
+        try:
+            reopen_period(period, request.user)
         except PayrollError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_409_CONFLICT)
         return self._detail(period)

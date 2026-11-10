@@ -26,6 +26,8 @@ export interface Movement {
   created_by: string | null;
   created_at: string;
   category?: string;
+  /** Periodo de nómina que generó este gasto (no editable). */
+  payroll_period?: number | null;
 }
 
 export interface MovementBody {

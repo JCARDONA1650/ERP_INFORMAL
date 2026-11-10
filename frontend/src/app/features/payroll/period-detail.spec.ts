@@ -73,7 +73,7 @@ describe('PeriodDetail', () => {
     setup(['Administrador']);
     buttonByText('Cerrar periodo')!.click();
     fixture.detectChanges();
-    expect(el.textContent).toContain('irreversible');
+    expect(el.textContent).toContain('gasto «Nómina» en Finanzas');
     http.expectNone('/api/payroll/periods/4/close/');
     buttonByText('Cancelar')!.click();
     fixture.detectChanges();
@@ -92,6 +92,22 @@ describe('PeriodDetail', () => {
     expect(el.textContent).toContain('Cerrado');
     expect(buttonByText('Recalcular')).toBeUndefined();
     expect(buttonByText('Ajustar')).toBeUndefined();
+  });
+
+  it('solo el Administrador reabre un periodo cerrado, con confirmación', () => {
+    const closed = { ...PERIOD, status: 'CLOSED', closed_by: 'adm', closed_at: '2026-11-09T12:00:00Z' };
+    setup(['RRHH'], closed);
+    expect(buttonByText('Reabrir')).toBeUndefined();
+    TestBed.resetTestingModule();
+    setup(['Administrador'], closed);
+    buttonByText('Reabrir periodo')!.click();
+    fixture.detectChanges();
+    http.expectNone('/api/payroll/periods/4/reopen/');
+    buttonByText('Sí, reabrir')!.click();
+    http.expectOne('/api/payroll/periods/4/reopen/').flush(PERIOD);
+    fixture.detectChanges();
+    expect(el.textContent).toContain('Abierto');
+    expect(buttonByText('Recalcular')).toBeDefined();
   });
 
   it('ajusta una línea con motivo y recarga el periodo', () => {

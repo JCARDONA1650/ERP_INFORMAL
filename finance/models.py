@@ -52,6 +52,12 @@ class ProjectExpense(_Movement):
         ("other", "Otros"),
     ]
     category = models.CharField(max_length=20, choices=CATEGORY, default="other")
+    # Gasto generado automáticamente al cerrar una nómina. No se edita a mano: se rehace
+    # reabriendo y cerrando de nuevo el periodo.
+    payroll_period = models.ForeignKey(
+        "payroll.PayrollPeriod", null=True, blank=True, on_delete=models.PROTECT,
+        related_name="expenses", verbose_name="Periodo de nómina",
+    )
 
     class Meta(_Movement.Meta):
         indexes = [models.Index(fields=["project", "date"])]
