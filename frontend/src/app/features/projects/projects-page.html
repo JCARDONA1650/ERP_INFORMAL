@@ -42,6 +42,48 @@
     </p>
 
     <fieldset class="block">
+      <legend>Jornada y almuerzo</legend>
+      <div class="days" role="group" aria-label="Días laborales">
+        @for (d of weekdays; track d.n) {
+          <label class="check">
+            <input type="checkbox" [checked]="workDays().includes(d.n)" (change)="toggleDay(d.n)" />
+            {{ d.label }}
+          </label>
+        }
+      </div>
+      <div class="form-row">
+        <label>
+          Inicio de jornada
+          <input type="time" formControlName="work_start" />
+        </label>
+        <label>
+          Fin de jornada
+          <input type="time" formControlName="work_end" />
+        </label>
+        @if (lunchCustom()) {
+          <p class="muted hint">
+            Este proyecto tiene horarios de almuerzo distintos por día (cargados en el administrador); se conservan y
+            no se editan desde aquí.
+          </p>
+        } @else {
+          <label>
+            Inicio de almuerzo
+            <input type="time" formControlName="lunch_start" />
+          </label>
+          <label>
+            Fin de almuerzo
+            <input type="time" formControlName="lunch_end" />
+          </label>
+        }
+      </div>
+      <p class="muted hint">
+        El almuerzo se descuenta de las horas netas y de la nómina en los días laborales. Una marcación fuera de los
+        días u horas de la jornada no se rechaza: queda para revisión del supervisor. Sin días definidos, no se
+        restringe ningún día.
+      </p>
+    </fieldset>
+
+    <fieldset class="block">
       <legend>Zona de obra</legend>
       <label class="check"><input type="checkbox" formControlName="hasSite" /> Definir zona de obra</label>
       @if (form.controls.hasSite.value) {

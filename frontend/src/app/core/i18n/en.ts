@@ -17,6 +17,21 @@ export const EN_EXACT: Record<string, string> = {
   Trabajadores: 'Workers',
   Usuarios: 'Users',
   Principal: 'Main',
+  'Jornada y almuerzo': 'Workday and lunch',
+  'Días laborales': 'Work days',
+  'Inicio de jornada': 'Workday start',
+  'Fin de jornada': 'Workday end',
+  'Inicio de almuerzo': 'Lunch start',
+  'Fin de almuerzo': 'Lunch end',
+  Lun: 'Mon', Mar: 'Tue', Mié: 'Wed', Jue: 'Thu', Vie: 'Fri', Sáb: 'Sat', Dom: 'Sun',
+  'Este proyecto tiene horarios de almuerzo distintos por día (cargados en el administrador); se conservan y no se editan desde aquí.':
+    'This project has different lunch times per day (loaded in the admin site); they are kept and not edited here.',
+  'El almuerzo se descuenta de las horas netas y de la nómina en los días laborales. Una marcación fuera de los días u horas de la jornada no se rechaza: queda para revisión del supervisor. Sin días definidos, no se restringe ningún día.':
+    'Lunch is deducted from net hours and payroll on work days. A clock-in outside the workdays or hours is not rejected: it is left for supervisor review. With no days defined, no day is restricted.',
+  'Indica la hora de inicio y la de fin de la jornada.': 'Enter both the start and end time of the workday.',
+  'La hora de fin de la jornada debe ser mayor que la de inicio.': 'The workday end time must be later than the start time.',
+  'Indica la hora de inicio y la de fin del almuerzo.': 'Enter both the start and end time of lunch.',
+  'La hora final del almuerzo debe ser mayor que la inicial.': 'The lunch end time must be later than the start time.',
   'Marcar por trabajador': 'Clock in for a worker',
   'Marcar por un trabajador': 'Clock in for a worker',
   'Para trabajadores sin celular: busca al trabajador en el proyecto y registra su ingreso o salida con una foto tomada en este momento. Queda registrado quién hizo la marcación.':

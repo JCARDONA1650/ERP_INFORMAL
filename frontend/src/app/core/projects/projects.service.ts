@@ -29,6 +29,14 @@ export interface Project extends ProjectSummary {
   contract_currency: string;
   /** Si es true, toda marcación debe traer foto tomada en el momento. */
   photo_required: boolean;
+  /** Días laborales: 0 = lunes … 6 = domingo. Vacío = sin restricción. */
+  work_days: number[];
+  work_start: string | null;
+  work_end: string | null;
+  lunch_start: string | null;
+  lunch_end: string | null;
+  /** Hay almuerzos distintos por día (cargados en el administrador): no se editan desde la pantalla. */
+  lunch_custom: boolean;
   site: ProjectSite | null;
   supervisors: number[];
   employees: number[];
@@ -39,6 +47,12 @@ export interface ProjectBody {
   contract_value?: string;
   contract_currency?: string;
   photo_required?: boolean;
+  work_days?: number[];
+  work_start?: string | null;
+  work_end?: string | null;
+  /** Se omiten cuando el proyecto tiene almuerzos distintos por día (para no sobrescribirlos). */
+  lunch_start?: string | null;
+  lunch_end?: string | null;
   active?: boolean;
   site?: {
     latitude: number;

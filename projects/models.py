@@ -40,10 +40,36 @@ class Project(models.Model):
     # Si es True, toda marcación (QR o asistida) debe traer una foto tomada en el momento.
     photo_required = models.BooleanField("Foto obligatoria al marcar", default=True)
 
+    # Jornada del proyecto (informativa: una marcación fuera de ella queda para revisión).
+    # work_days: días 0=lunes … 6=domingo; vacío = sin restricción de días.
+    work_days = models.JSONField("Días laborales", default=list, blank=True)
+    work_start = models.TimeField("Inicio de jornada", null=True, blank=True)
+    work_end = models.TimeField("Fin de jornada", null=True, blank=True)
+
     active = models.BooleanField("Activo", default=True)
 
     class Meta:
         ordering = ["name"]
+
+    def clean(self):
+        days = self.work_days or []
+        if not isinstance(days, list) or any(
+            not isinstance(d, int) or isinstance(d, bool) or d < 0 or d > 6 for d in days
+        ):
+            raise ValidationError({"work_days": "Los días laborales deben ser números de 0 (lunes) a 6 (domingo)."})
+        self.work_days = sorted(set(days))
+        if (self.work_start is None) != (self.work_end is None):
+            raise ValidationError({"work_end": "Indica la hora de inicio y la de fin de la jornada."})
+        if self.work_start and self.work_end and self.work_end <= self.work_start:
+            raise ValidationError({"work_end": "La hora de fin de la jornada debe ser mayor que la de inicio."})
+
+    def outside_schedule(self, local_dt) -> bool:
+        """True si `local_dt` (hora local) cae en un día no laboral o fuera del horario de la jornada."""
+        if self.work_days and local_dt.weekday() not in self.work_days:
+            return True
+        if self.work_start and self.work_end:
+            return not (self.work_start <= local_dt.time().replace(second=0, microsecond=0) <= self.work_end)
+        return False
 
     def _unique_slug(self):
         base = slugify(self.name) or "proyecto"

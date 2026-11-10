@@ -39,6 +39,12 @@ export class ProjectsPage implements OnInit {
   protected readonly formError = signal<string | null>(null);
   protected readonly locating = signal(false);
 
+  protected readonly weekdays = [
+    { n: 0, label: 'Lun' }, { n: 1, label: 'Mar' }, { n: 2, label: 'Mié' }, { n: 3, label: 'Jue' },
+    { n: 4, label: 'Vie' }, { n: 5, label: 'Sáb' }, { n: 6, label: 'Dom' },
+  ];
+  protected readonly workDays = signal<number[]>([]);
+  protected readonly lunchCustom = signal(false);
   protected readonly selectedSupervisors = signal<number[]>([]);
   protected readonly selectedEmployees = signal<number[]>([]);
   protected readonly employeeFilter = signal('');
@@ -52,6 +58,10 @@ export class ProjectsPage implements OnInit {
     contract_value: this.fb.nonNullable.control<string | number>('0'),
     contract_currency: 'USD',
     photo_required: true,
+    work_start: '',
+    work_end: '',
+    lunch_start: '',
+    lunch_end: '',
     hasSite: false,
     latitude: this.fb.nonNullable.control<string | number>(''),
     longitude: this.fb.nonNullable.control<string | number>(''),
@@ -84,8 +94,10 @@ export class ProjectsPage implements OnInit {
   protected openNew(): void {
     this.editing.set(null);
     this.formError.set(null);
-    this.form.reset({ name: '', contract_value: '0', contract_currency: 'USD', photo_required: true, hasSite: false, latitude: '', longitude: '', radius_m: 150, out_of_zone_policy: 'block', address: '' });
+    this.form.reset({ name: '', contract_value: '0', contract_currency: 'USD', photo_required: true, work_start: '', work_end: '', lunch_start: '', lunch_end: '', hasSite: false, latitude: '', longitude: '', radius_m: 150, out_of_zone_policy: 'block', address: '' });
     this.resetAddressSearch('');
+    this.workDays.set([]);
+    this.lunchCustom.set(false);
     this.selectedSupervisors.set([]);
     this.selectedEmployees.set([]);
     this.employeeFilter.set('');
@@ -100,6 +112,10 @@ export class ProjectsPage implements OnInit {
       contract_value: p.contract_value,
       contract_currency: p.contract_currency,
       photo_required: p.photo_required ?? true,
+      work_start: this.hhmm(p.work_start),
+      work_end: this.hhmm(p.work_end),
+      lunch_start: this.hhmm(p.lunch_start),
+      lunch_end: this.hhmm(p.lunch_end),
       hasSite: p.site !== null,
       latitude: p.site?.latitude ?? '',
       longitude: p.site?.longitude ?? '',
@@ -108,6 +124,8 @@ export class ProjectsPage implements OnInit {
       address: p.site?.address ?? '',
     });
     this.resetAddressSearch(p.site?.address ?? '');
+    this.workDays.set([...(p.work_days ?? [])]);
+    this.lunchCustom.set(p.lunch_custom ?? false);
     this.selectedSupervisors.set([...p.supervisors]);
     this.selectedEmployees.set([...p.employees]);
     this.employeeFilter.set('');
@@ -225,6 +243,17 @@ export class ProjectsPage implements OnInit {
     return Number(text);
   }
 
+  protected toggleDay(day: number): void {
+    this.workDays.update((days) =>
+      days.includes(day) ? days.filter((d) => d !== day) : [...days, day].sort((a, b) => a - b),
+    );
+  }
+
+  /** "07:00:00" → "07:00" (los campos de hora del navegador usan HH:MM). */
+  private hhmm(value: string | null | undefined): string {
+    return value ? value.slice(0, 5) : '';
+  }
+
   protected save(): void {
     if (this.saving()) return;
     const v = this.form.getRawValue();
@@ -232,6 +261,20 @@ export class ProjectsPage implements OnInit {
     const contract = String(v.contract_value).trim();
     if (contract === '' || Number.isNaN(Number(contract)) || Number(contract) < 0) {
       return this.formError.set('El valor del contrato debe ser cero o mayor.');
+    }
+    if (!!v.work_start !== !!v.work_end) {
+      return this.formError.set('Indica la hora de inicio y la de fin de la jornada.');
+    }
+    if (v.work_start && v.work_end && v.work_end <= v.work_start) {
+      return this.formError.set('La hora de fin de la jornada debe ser mayor que la de inicio.');
+    }
+    if (!this.lunchCustom()) {
+      if (!!v.lunch_start !== !!v.lunch_end) {
+        return this.formError.set('Indica la hora de inicio y la de fin del almuerzo.');
+      }
+      if (v.lunch_start && v.lunch_end && v.lunch_end <= v.lunch_start) {
+        return this.formError.set('La hora final del almuerzo debe ser mayor que la inicial.');
+      }
     }
 
     let site: ProjectBody['site'] = null;
@@ -257,6 +300,11 @@ export class ProjectsPage implements OnInit {
       contract_value: contract,
       contract_currency: v.contract_currency,
       photo_required: v.photo_required,
+      work_days: this.workDays(),
+      work_start: v.work_start || null,
+      work_end: v.work_end || null,
+      // Con almuerzos distintos por día (administrador) no se envía nada: se conservan tal cual.
+      ...(this.lunchCustom() ? {} : { lunch_start: v.lunch_start || null, lunch_end: v.lunch_end || null }),
       site,
       supervisors: this.selectedSupervisors(),
       employees: this.selectedEmployees(),

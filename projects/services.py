@@ -52,6 +52,33 @@ from django.db import transaction  # noqa: E402
 from .models import ProjectSite  # noqa: E402
 
 
+def project_lunch(project: Project):
+    """(inicio, fin, personalizado) del almuerzo del proyecto.
+    Es 'personalizado' cuando las reglas difieren entre días (se cargaron en el administrador):
+    en ese caso no se puede representar con un solo horario y no se edita desde la pantalla."""
+    rules = [r for r in project.lunch_rules.all() if r.active]  # se precarga con prefetch_related
+    if not rules:
+        return None, None, False
+    spans = {(r.start_time, r.end_time) for r in rules}
+    if len(spans) > 1:
+        return None, None, True
+    start, end = next(iter(spans))
+    return start, end, False
+
+
+@transaction.atomic
+def set_project_lunch(project: Project, start, end) -> None:
+    """Reemplaza el almuerzo del proyecto: un horario para sus días laborales (o toda la semana
+    si no hay días definidos). `start`/`end` en None lo elimina (sin almuerzo configurado)."""
+    from attendance.models import ProjectLunchRule  # import local: evita ciclo
+
+    ProjectLunchRule.objects.filter(project=project).delete()
+    if start is None or end is None:
+        return
+    for weekday in project.work_days or range(7):
+        ProjectLunchRule.objects.create(project=project, weekday=weekday, start_time=start, end_time=end)
+
+
 @transaction.atomic
 def save_project_site(project: Project, data):
     """Crea, actualiza o elimina la zona de obra. `data=None` la elimina."""

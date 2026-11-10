@@ -10,6 +10,8 @@ import { ProjectsPage } from './projects-page';
 const page = (results: unknown[]) => ({ count: results.length, next: null, previous: null, results });
 const MONTEGO: Project = {
   id: 1, name: 'Montego', slug: 'montego', active: true, contract_value: '1000.00', contract_currency: 'USD', photo_required: true,
+  work_days: [0, 1, 2, 3, 4, 5], work_start: '07:00:00', work_end: '17:00:00',
+  lunch_start: '13:00', lunch_end: '14:00', lunch_custom: false,
   site: { latitude: '28.500000', longitude: '-81.400000', radius_m: 200, out_of_zone_policy: 'block', address: '' },
   supervisors: [5], employees: [3],
 };
@@ -86,6 +88,7 @@ describe('ProjectsPage', () => {
     const req = http.expectOne((r) => r.method === 'POST');
     expect(req.request.body).toEqual({
       name: 'Torre Norte', contract_value: '0', contract_currency: 'USD', photo_required: true,
+      work_days: [], work_start: null, work_end: null, lunch_start: null, lunch_end: null,
       site: { latitude: 28.5, longitude: -81.4, radius_m: 150, out_of_zone_policy: 'block', address: '' },
       supervisors: [5], employees: [3],
     });
@@ -160,6 +163,54 @@ describe('ProjectsPage', () => {
     const req = http.expectOne('/api/projects/1/');
     expect(req.request.body.photo_required).toBe(false);
     req.flush({ ...MONTEGO, photo_required: false });
+    listReq().flush(page([MONTEGO]));
+  });
+
+  it('precarga jornada y almuerzo, y permite cambiarlos', () => {
+    setup();
+    btn('Editar').click();
+    fixture.detectChanges();
+    expect((el.querySelector('input[formControlName="work_start"]') as HTMLInputElement).value).toBe('07:00');
+    expect((el.querySelector('input[formControlName="lunch_start"]') as HTMLInputElement).value).toBe('13:00');
+    const days = Array.from(el.querySelectorAll('.days input')) as HTMLInputElement[];
+    expect(days.map((d) => d.checked)).toEqual([true, true, true, true, true, true, false]);
+
+    days[5].click(); // quita el sábado
+    fill('input[formControlName="lunch_start"]', '12:00');
+    fill('input[formControlName="lunch_end"]', '13:00');
+    submit();
+    const req = http.expectOne('/api/projects/1/');
+    expect(req.request.body.work_days).toEqual([0, 1, 2, 3, 4]);
+    expect(req.request.body.lunch_start).toBe('12:00');
+    expect(req.request.body.lunch_end).toBe('13:00');
+    req.flush(MONTEGO);
+    listReq().flush(page([MONTEGO]));
+  });
+
+  it('valida la jornada y el almuerzo antes de enviar', () => {
+    setup();
+    btn('Editar').click();
+    fixture.detectChanges();
+    const alertText = () => el.querySelector('.project-form [role="alert"]')?.textContent ?? '';
+    fill('input[formControlName="work_end"]', '06:00');
+    submit(); fixture.detectChanges();
+    expect(alertText()).toContain('jornada');
+    fill('input[formControlName="work_end"]', '17:00');
+    fill('input[formControlName="lunch_end"]', '12:00');
+    submit(); fixture.detectChanges();
+    expect(alertText()).toContain('almuerzo');
+    http.expectNone((r) => r.method === 'PATCH');
+  });
+
+  it('con almuerzos distintos por día no los envía (no los pisa)', () => {
+    setup([{ ...MONTEGO, lunch_start: null, lunch_end: null, lunch_custom: true }]);
+    btn('Editar').click();
+    fixture.detectChanges();
+    expect(el.textContent).toContain('distintos por día');
+    submit();
+    const req = http.expectOne('/api/projects/1/');
+    expect('lunch_start' in req.request.body).toBe(false);
+    req.flush(MONTEGO);
     listReq().flush(page([MONTEGO]));
   });
 

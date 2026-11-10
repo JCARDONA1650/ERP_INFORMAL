@@ -175,6 +175,10 @@ def register_scan(
         att.in_zone = in_zone if att.in_zone is not False else False
     if in_zone is False:
         att.needs_review = True
+    # Fuera de la jornada del proyecto (día no laboral u horario): no se rechaza, queda para revisión.
+    off_schedule = project.outside_schedule(timezone.localtime(now))
+    if off_schedule:
+        att.needs_review = True
 
     local = timezone.localtime(now).strftime("%H:%M")
     if action == "in":
@@ -194,6 +198,8 @@ def register_scan(
             f"Salida registrada: {employee.full_name} a las {local}. "
             f"Tiempo neto trabajado: {m // 60:02d}:{m % 60:02d}."
         )
+    if off_schedule:
+        msg += " Quedó fuera de la jornada del proyecto y el supervisor la revisará."
     att.save()
     logger.info(
         "Marcación: proyecto=%s trabajador=%s acción=%s fuente=%s en_zona=%s",

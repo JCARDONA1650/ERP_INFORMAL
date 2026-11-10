@@ -118,5 +118,5 @@ class ProjectApiTests(APITestCase):
             p.employees.add(self.emp)
             ProjectSite.objects.create(project=p, latitude="28.5", longitude="-81.4")
         self.client.force_authenticate(self.adm)
-        with self.assertNumQueries(6):  # 2 chequeos de rol + conteo + proyectos(+site) + supervisores + trabajadores; constante
+        with self.assertNumQueries(7):  # 2 chequeos de rol + conteo + proyectos(+site) + supervisores + trabajadores + almuerzo; constante
             self.client.get(URL)

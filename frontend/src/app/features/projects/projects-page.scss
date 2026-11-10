@@ -73,6 +73,13 @@
   }
 }
 
+.days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin-bottom: 0.5rem;
+}
+
 .addr {
   display: block;
   max-width: 320px;
