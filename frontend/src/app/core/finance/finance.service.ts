@@ -47,15 +47,63 @@ export interface FinanceSummary {
 }
 
 export interface MovementFilters {
-  project: number;
+  /** Sin proyecto = todos los proyectos (registro global). */
+  project?: number | null;
   date_from?: string;
   date_to?: string;
   page?: number;
 }
 
+export type SeriesGroup = 'day' | 'week' | 'month';
+
+/** Un periodo de la gráfica: flujos del periodo y balance acumulado del rango. */
+export interface SeriesPoint {
+  period: string; // AAAA-MM-DD (inicio del periodo)
+  income: string;
+  expense: string;
+  net: string;
+  cumulative: string;
+}
+
+export interface ProjectFinanceRow {
+  project: { id: number; name: string; active: boolean };
+  contract: { value: string; currency: string; billed_pct: string | null };
+  incomes: Record<string, string>;
+  expenses: Record<string, string>;
+  balance: Record<string, string>;
+}
+
+/** Registro global (scope = null) o de un proyecto, con serie temporal para la gráfica. */
+export interface FinanceOverview {
+  scope: { id: number; name: string } | null;
+  currencies: string[];
+  totals: { incomes: Record<string, string>; expenses: Record<string, string>; balance: Record<string, string> };
+  projects: ProjectFinanceRow[];
+  expenses_by_category: { category: string; currency: string; total: string }[];
+  series: { currency: string | null; group: SeriesGroup; points: SeriesPoint[] };
+}
+
+export interface OverviewParams {
+  project?: number | null;
+  date_from?: string;
+  date_to?: string;
+  group?: SeriesGroup | null;
+  currency?: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class FinanceService {
   private readonly http = inject(HttpClient);
+
+  overview(p: OverviewParams): Observable<FinanceOverview> {
+    let params = new HttpParams();
+    if (p.project) params = params.set('project', p.project);
+    if (p.date_from) params = params.set('date_from', p.date_from);
+    if (p.date_to) params = params.set('date_to', p.date_to);
+    if (p.group) params = params.set('group', p.group);
+    if (p.currency) params = params.set('currency', p.currency);
+    return this.http.get<FinanceOverview>(`${API_URL}/finance/overview/`, { params });
+  }
 
   summary(project: number, from?: string, to?: string): Observable<FinanceSummary> {
     let params = new HttpParams();
@@ -65,7 +113,8 @@ export class FinanceService {
   }
 
   list(kind: MovementKind, f: MovementFilters): Observable<Page<Movement>> {
-    let params = new HttpParams().set('project', f.project);
+    let params = new HttpParams();
+    if (f.project) params = params.set('project', f.project);
     if (f.date_from) params = params.set('date_from', f.date_from);
     if (f.date_to) params = params.set('date_to', f.date_to);
     if (f.page && f.page > 1) params = params.set('page', f.page);

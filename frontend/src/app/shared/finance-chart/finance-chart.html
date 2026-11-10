@@ -1,0 +1,102 @@
+<figure class="chart">
+  <div class="chart__legend" aria-hidden="true">
+    <span class="chart__key chart__key--line">Balance acumulado ({{ currency() }})</span>
+    <span class="chart__key chart__key--in">Ingresos</span>
+    <span class="chart__key chart__key--out">Gastos</span>
+  </div>
+
+  @if (points().length === 0) {
+    <p class="chart__empty">Sin movimientos en este rango.</p>
+  } @else {
+    <div class="chart__wrap">
+      <svg
+        class="chart__svg"
+        [attr.viewBox]="'0 0 ' + W + ' 380'"
+        role="img"
+        [attr.aria-label]="ariaLabel()"
+        (pointermove)="onMove($event)"
+        (pointerleave)="onLeave()"
+      >
+        <defs>
+          <linearGradient id="fc-area-up" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#3fbf7f" stop-opacity="0.45" />
+            <stop offset="100%" stop-color="#3fbf7f" stop-opacity="0.02" />
+          </linearGradient>
+          <linearGradient id="fc-area-down" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ef5350" stop-opacity="0.02" />
+            <stop offset="100%" stop-color="#ef5350" stop-opacity="0.45" />
+          </linearGradient>
+        </defs>
+
+        <!-- Cuadrícula y eje Y del balance -->
+        @for (t of yTicks(); track t.y) {
+          <line class="chart__grid" [attr.x1]="LEFT" [attr.x2]="W - RIGHT" [attr.y1]="t.y" [attr.y2]="t.y" />
+          <text class="chart__tick" [attr.x]="LEFT - 8" [attr.y]="t.y + 4" text-anchor="end">{{ t.label }}</text>
+        }
+        <line class="chart__zero" [attr.x1]="LEFT" [attr.x2]="W - RIGHT" [attr.y1]="zeroY()" [attr.y2]="zeroY()" />
+
+        <!-- Área y línea del balance acumulado -->
+        <path [attr.d]="areaPath()" [attr.fill]="positive() ? 'url(#fc-area-up)' : 'url(#fc-area-down)'" />
+        <path class="chart__line" [class.chart__line--down]="!positive()" [attr.d]="linePath()" />
+
+        <!-- Barras de ingresos y gastos por periodo -->
+        @for (t of barTicks(); track t.y) {
+          <text class="chart__tick" [attr.x]="LEFT - 8" [attr.y]="t.y + 4" text-anchor="end">{{ t.label }}</text>
+        }
+        <line class="chart__grid" [attr.x1]="LEFT" [attr.x2]="W - RIGHT" [attr.y1]="barMid" [attr.y2]="barMid" />
+        @for (p of points(); track p.period; let i = $index) {
+          <rect
+            class="chart__bar chart__bar--in"
+            [attr.x]="x(i) - barW() / 2"
+            [attr.width]="barW()"
+            [attr.y]="barMid - barHeight(+p.income)"
+            [attr.height]="barHeight(+p.income)"
+          />
+          <rect
+            class="chart__bar chart__bar--out"
+            [attr.x]="x(i) - barW() / 2"
+            [attr.width]="barW()"
+            [attr.y]="barMid"
+            [attr.height]="barHeight(+p.expense)"
+          />
+        }
+
+        <!-- Eje X -->
+        @for (t of xTicks(); track t.i) {
+          <text class="chart__tick" [attr.x]="x(t.i)" [attr.y]="AXIS_Y + 12" text-anchor="middle">{{ t.label }}</text>
+        }
+
+        <!-- Cruz y punto del periodo bajo el cursor -->
+        @if (active(); as a) {
+          <line class="chart__cross" [attr.x1]="x(a.index)" [attr.x2]="x(a.index)" [attr.y1]="LINE_TOP" [attr.y2]="BARS_BOTTOM" />
+          <circle class="chart__dot" [attr.cx]="x(a.index)" [attr.cy]="lineY(a.c)" r="5" />
+        }
+      </svg>
+
+      @if (active(); as a) {
+        <div class="chart__tip" [style.left.%]="tipLeft()" [class.chart__tip--right]="tipLeft() > 60" role="status">
+          <strong>{{ periodLabel(a.period, true) }}</strong>
+          <span class="chart__in">Ingresos {{ money(a.income, currency()) }}</span>
+          <span class="chart__out">Gastos {{ money(a.expense, currency()) }}</span>
+          <span>Neto {{ money(a.net, currency()) }}</span>
+          <span class="chart__cum">Acumulado {{ money(a.cumulative, currency()) }}</span>
+        </div>
+      }
+    </div>
+
+    <table class="sr-only">
+      <caption>Balance por periodo</caption>
+      <thead><tr><th>Periodo</th><th>Ingresos</th><th>Gastos</th><th>Acumulado</th></tr></thead>
+      <tbody>
+        @for (p of points(); track p.period) {
+          <tr>
+            <td>{{ periodLabel(p.period, true) }}</td>
+            <td>{{ money(p.income, currency()) }}</td>
+            <td>{{ money(p.expense, currency()) }}</td>
+            <td>{{ money(p.cumulative, currency()) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</figure>

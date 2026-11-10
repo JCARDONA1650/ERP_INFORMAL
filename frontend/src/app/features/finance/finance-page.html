@@ -1,13 +1,16 @@
 <header class="page-head">
   <h1>Finanzas</h1>
-  <p class="muted">Ingresos y gastos por proyecto. Los movimientos se editan, no se borran, y cada cambio queda auditado.</p>
+  <p class="muted">
+    Ingresos y gastos de todos los proyectos o de uno. Los movimientos se editan, no se borran, y cada cambio queda
+    auditado.
+  </p>
 </header>
 
 <form class="panel form-row" [formGroup]="filters" (ngSubmit)="search()">
   <label>
     Proyecto
     <select formControlName="project">
-      <option [ngValue]="null" disabled>Selecciona…</option>
+      <option [ngValue]="null">Todos los proyectos</option>
       @for (p of projects(); track p.id) {
         <option [ngValue]="p.id">{{ p.name }}</option>
       }
@@ -28,33 +31,102 @@
   <p class="alert" role="alert">{{ message }}</p>
 }
 
-@if (summary(); as s) {
+@if (overview(); as o) {
   <section class="cards" aria-label="Resumen">
-    <article class="card">
-      <h2>Contrato</h2>
-      <p class="card__value">{{ money(s.contract.value, s.contract.currency) }}</p>
-      <p class="muted">
-        @if (s.contract.billed_pct !== null) { Facturado: {{ s.contract.billed_pct }}% } @else { Sin valor de contrato }
-      </p>
-    </article>
+    @if (contract(); as c) {
+      <article class="card">
+        <h2>Contrato</h2>
+        <p class="card__value">{{ money(c.value, c.currency) }}</p>
+        <p class="muted">
+          @if (c.billed_pct !== null) { Facturado: {{ c.billed_pct }}% } @else { Sin valor de contrato }
+        </p>
+      </article>
+    } @else {
+      <article class="card">
+        <h2>Proyectos</h2>
+        <p class="card__value">{{ o.projects.length }}</p>
+        <p class="muted">Registro global</p>
+      </article>
+    }
     @for (cur of currencies(); track cur) {
       <article class="card">
         <h2>Balance {{ cur }}</h2>
-        <p class="card__value">{{ money(s.balance[cur], cur) }}</p>
+        <p class="card__value">{{ money(o.totals.balance[cur], cur) }}</p>
         <p class="muted">
-          Ingresos {{ money(s.incomes[cur], cur) }} · Gastos {{ money(s.expenses[cur], cur) }}
+          Ingresos {{ money(o.totals.incomes[cur] ?? 0, cur) }} · Gastos {{ money(o.totals.expenses[cur] ?? 0, cur) }}
         </p>
       </article>
     }
   </section>
 
-  @if (s.expenses_by_category.length) {
+  <section class="chart-section" aria-label="Evolución del balance">
+    <div class="chart-controls">
+      <div class="tabs" role="group" aria-label="Agrupar por">
+        @for (g of groups; track g.value) {
+          <button
+            type="button"
+            [class.is-active]="(group() ?? o.series.group) === g.value"
+            [attr.aria-pressed]="(group() ?? o.series.group) === g.value"
+            (click)="setGroup(g.value)"
+          >
+            {{ g.label }}
+          </button>
+        }
+      </div>
+      @if (currencies().length > 1) {
+        <label class="chart-currency">
+          Moneda
+          <select [value]="o.series.currency" (change)="onChartCurrency($event)">
+            @for (cur of currencies(); track cur) {
+              <option [value]="cur">{{ cur }}</option>
+            }
+          </select>
+        </label>
+      }
+    </div>
+    @if (o.series.currency; as cur) {
+      <app-finance-chart [points]="o.series.points" [currency]="cur" [group]="o.series.group" />
+    } @else {
+      <p class="muted">Sin movimientos en este rango.</p>
+    }
+  </section>
+
+  @if (isGlobal()) {
+    <div class="table-wrap">
+      <table>
+        <caption class="sr-only">Detalle por proyecto</caption>
+        <thead>
+          <tr>
+            <th>Proyecto</th><th class="num">Contrato</th><th class="num">Ingresos</th>
+            <th class="num">Gastos</th><th class="num">Balance</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of o.projects; track row.project.id) {
+            <tr>
+              <td>
+                <button class="link" type="button" (click)="viewProject(row.project.id)">{{ row.project.name }}</button>
+              </td>
+              <td class="num">{{ money(row.contract.value, row.contract.currency) }}</td>
+              <td class="num">{{ moneyMap(row.incomes) }}</td>
+              <td class="num">{{ moneyMap(row.expenses) }}</td>
+              <td class="num">{{ moneyMap(row.balance) }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="5" class="empty">No hay proyectos.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (o.expenses_by_category.length) {
     <div class="table-wrap cat-table">
       <table>
         <caption class="sr-only">Gastos por categoría</caption>
         <thead><tr><th>Categoría de gasto</th><th class="num">Total</th></tr></thead>
         <tbody>
-          @for (c of s.expenses_by_category; track c.category + c.currency) {
+          @for (c of o.expenses_by_category; track c.category + c.currency) {
             <tr>
               <td>{{ categoryLabel(c.category) }}</td>
               <td class="num">{{ money(c.total, c.currency) }}</td>
@@ -80,6 +152,17 @@
       <h3 style="flex-basis: 100%">
         {{ editing() ? 'Editar' : 'Nuevo' }} {{ kind() === 'incomes' ? 'ingreso' : 'gasto' }}
       </h3>
+      @if (isGlobal() && !editing()) {
+        <label>
+          Proyecto
+          <select formControlName="project">
+            <option [ngValue]="null" disabled>Selecciona…</option>
+            @for (p of projects(); track p.id) {
+              <option [ngValue]="p.id">{{ p.name }}</option>
+            }
+          </select>
+        </label>
+      }
       <label>
         Fecha
         <input type="date" formControlName="date" />
@@ -122,6 +205,7 @@
       <thead>
         <tr>
           <th>Fecha</th>
+          @if (isGlobal()) { <th>Proyecto</th> }
           @if (kind() === 'expenses') { <th>Categoría</th> }
           <th>Descripción</th><th class="num">Monto</th><th>Registró</th><th></th>
         </tr>
@@ -130,6 +214,7 @@
         @for (m of list()?.results; track m.id) {
           <tr>
             <td>{{ m.date | date: 'dd/MM/yyyy' }}</td>
+            @if (isGlobal()) { <td>{{ projectName(m.project) }}</td> }
             @if (kind() === 'expenses') { <td>{{ categoryLabel(m.category) }}</td> }
             <td>{{ m.description || '—' }}</td>
             <td class="num">{{ money(m.amount, m.currency) }}</td>
@@ -137,7 +222,11 @@
             <td><button class="btn btn--ghost btn--sm" type="button" (click)="edit(m)">Editar</button></td>
           </tr>
         } @empty {
-          <tr><td [attr.colspan]="kind() === 'expenses' ? 6 : 5" class="empty">{{ loading() ? 'Cargando…' : 'No hay movimientos.' }}</td></tr>
+          <tr>
+            <td [attr.colspan]="5 + (kind() === 'expenses' ? 1 : 0) + (isGlobal() ? 1 : 0)" class="empty">
+              {{ loading() ? 'Cargando…' : 'No hay movimientos.' }}
+            </td>
+          </tr>
         }
       </tbody>
     </table>
@@ -151,5 +240,5 @@
     </nav>
   }
 } @else {
-  <p class="muted">Elige un proyecto para ver su resumen financiero.</p>
+  <p class="muted">Cargando…</p>
 }

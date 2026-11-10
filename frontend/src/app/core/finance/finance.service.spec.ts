@@ -17,6 +17,14 @@ describe('FinanceService', () => {
   afterEach(() => http.verify());
 
   it('pide el resumen con rango de fechas', () => {
+    service.overview({ project: null, group: 'week', currency: 'USD' }).subscribe();
+    const ov = http.expectOne((r) => r.url === '/api/finance/overview/');
+    expect(ov.request.params.has('project')).toBe(false); // sin proyecto = todos
+    expect(ov.request.params.get('group')).toBe('week');
+    expect(ov.request.params.get('currency')).toBe('USD');
+    service.list('incomes', { project: null }).subscribe();
+    expect(http.expectOne((r) => r.url === '/api/finance/incomes/').request.params.has('project')).toBe(false);
+
     service.summary(3, '2026-11-01', '2026-11-30').subscribe();
     const req = http.expectOne((r) => r.url === '/api/projects/3/finance/');
     expect(req.request.params.get('date_from')).toBe('2026-11-01');

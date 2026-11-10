@@ -1,0 +1,153 @@
+:host {
+  display: block;
+}
+
+.chart {
+  margin: 0;
+  padding: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+
+  &__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.25rem;
+    margin-bottom: 0.5rem;
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+
+  &__key::before {
+    content: '';
+    display: inline-block;
+    width: 0.7rem;
+    height: 0.7rem;
+    margin-right: 0.4rem;
+    border-radius: 2px;
+    vertical-align: -1px;
+  }
+
+  &__key--line::before {
+    background: var(--accent);
+  }
+
+  &__key--in::before {
+    background: #3fbf7f;
+  }
+
+  &__key--out::before {
+    background: #ef5350;
+  }
+
+  &__empty {
+    margin: 2rem 0;
+    text-align: center;
+    color: var(--muted);
+  }
+
+  &__wrap {
+    position: relative;
+  }
+
+  &__svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    touch-action: pan-y;
+    cursor: crosshair;
+  }
+
+  &__grid {
+    stroke: var(--border);
+    stroke-width: 1;
+  }
+
+  &__zero {
+    stroke: var(--muted);
+    stroke-width: 1;
+    stroke-dasharray: 4 4;
+  }
+
+  &__tick {
+    fill: var(--muted);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__line {
+    fill: none;
+    stroke: #3fbf7f;
+    stroke-width: 2.5;
+    stroke-linejoin: round;
+
+    &--down {
+      stroke: #ef5350;
+    }
+  }
+
+  &__bar--in {
+    fill: #3fbf7f;
+  }
+
+  &__bar--out {
+    fill: #ef5350;
+  }
+
+  &__cross {
+    stroke: var(--muted);
+    stroke-width: 1;
+    stroke-dasharray: 3 3;
+    pointer-events: none;
+  }
+
+  &__dot {
+    fill: var(--accent);
+    stroke: var(--bg);
+    stroke-width: 2;
+    pointer-events: none;
+  }
+
+  &__tip {
+    position: absolute;
+    top: 0.5rem;
+    display: grid;
+    gap: 0.15rem;
+    min-width: 11rem;
+    padding: 0.55rem 0.7rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    transform: translateX(0.9rem);
+    pointer-events: none;
+
+    &--right {
+      transform: translateX(calc(-100% - 0.9rem));
+    }
+  }
+
+  &__in {
+    color: #6ee7a8;
+  }
+
+  &__out {
+    color: #fca5a5;
+  }
+
+  &__cum {
+    font-weight: 700;
+    color: var(--accent);
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

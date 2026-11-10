@@ -7,7 +7,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from finance.models import ProjectExpense, ProjectIncome
-from finance.services import expenses_by_category, project_summary, record_movement, update_movement
+from finance.services import (
+    expenses_by_category,
+    finance_overview,
+    project_summary,
+    record_movement,
+    update_movement,
+)
 from projects.models import Project
 
 from .permissions import IsAdministrador
@@ -91,6 +97,35 @@ class IncomeViewSet(_MovementViewSet):
 class ExpenseViewSet(_MovementViewSet):
     model = ProjectExpense
     serializer_class = ExpenseSerializer
+
+
+class FinanceOverviewView(APIView):
+    """Registro global (todos los proyectos) o de un proyecto: totales por moneda, detalle por
+    proyecto, gastos por categoría y serie temporal (día/semana/mes) para la gráfica."""
+
+    permission_classes = [IsAdministrador]
+
+    def get(self, request):
+        p = request.query_params
+        project = None
+        if raw := p.get("project"):
+            try:
+                project = get_object_or_404(Project, pk=int(raw))
+            except ValueError as exc:
+                raise serializers.ValidationError({"detail": "project debe ser un número."}) from exc
+        try:
+            date_from = ProjectFinanceSummaryView._date(request, "date_from")
+            date_to = ProjectFinanceSummaryView._date(request, "date_to")
+        except ValueError as exc:
+            raise serializers.ValidationError({"detail": str(exc)}) from exc
+        if date_from and date_to and date_from > date_to:
+            raise serializers.ValidationError({"detail": "La fecha inicial no puede ser mayor que la final."})
+        group = p.get("group")
+        if group and group not in ("day", "week", "month"):
+            raise serializers.ValidationError({"detail": "group debe ser day, week o month."})
+        return Response(
+            finance_overview(project, date_from, date_to, group or None, p.get("currency") or None)
+        )
 
 
 class ProjectFinanceSummaryView(APIView):

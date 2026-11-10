@@ -7,7 +7,7 @@ from .attendance import AttendanceViewSet
 from .dashboard import DashboardView
 from .employees import EmployeeViewSet
 from .geocode import AddressReverseView, AddressSearchView
-from .finance import ExpenseViewSet, IncomeViewSet, ProjectFinanceSummaryView
+from .finance import ExpenseViewSet, FinanceOverviewView, IncomeViewSet, ProjectFinanceSummaryView
 from .payroll import PayrollLineAdjustView, PayrollPeriodViewSet
 from .manual_scan import ManualScanContextView, ManualScanView
 from .projects import ProjectViewSet
@@ -40,6 +40,7 @@ urlpatterns = [
     path("attendance/manual/context/", ManualScanContextView.as_view(), name="api-manual-context"),
     path("attendance/manual/", ManualScanView.as_view(), name="api-manual-scan"),
     path("payroll/lines/<int:pk>/adjust/", PayrollLineAdjustView.as_view(), name="payroll-line-adjust"),
+    path("finance/overview/", FinanceOverviewView.as_view(), name="api-finance-overview"),
     path("projects/<int:pk>/finance/", ProjectFinanceSummaryView.as_view(), name="api-project-finance"),
     path("reports/payroll/<int:pk>/<str:fmt>/", PayrollReportView.as_view(), name="report-payroll"),
     path("reports/attendance/<str:fmt>/", AttendanceReportView.as_view(), name="report-attendance"),
