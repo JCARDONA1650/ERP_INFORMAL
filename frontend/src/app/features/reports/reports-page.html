@@ -35,7 +35,7 @@
         <label class="form-row__grow">
           Periodo
           <select formControlName="period">
-            <option [ngValue]="null">Todos los proyectos</option>
+            <option [ngValue]="null" disabled>Selecciona…</option>
             @for (p of periods(); track p.id) {
               <option [ngValue]="p.id">
                 {{ p.start_date | date: 'dd/MM/yyyy' }} – {{ p.end_date | date: 'dd/MM/yyyy' }}
@@ -62,7 +62,7 @@
         <label class="form-row__grow">
           Proyecto
           <select formControlName="project">
-            <option [ngValue]="null" disabled>Selecciona…</option>
+            <option [ngValue]="null">Todos los proyectos</option>
             @for (p of projects(); track p.id) {
               <option [ngValue]="p.id">{{ p.name }}</option>
             }
@@ -72,12 +72,12 @@
         <label>Hasta <input type="date" formControlName="date_to" /></label>
       </form>
       <div class="actions">
-        <button class="btn btn--primary" type="button" [disabled]="isBusy('finance')" (click)="downloadFinance('xlsx')">Resumen · Excel</button>
-        <button class="btn btn--ghost" type="button" [disabled]="isBusy('finance')" (click)="downloadFinance('pdf')">Resumen · PDF</button>
-        <button class="btn btn--primary" type="button" [disabled]="isBusy('ledger')" (click)="downloadLedger('xlsx')">Registro detallado · Excel</button>
-        <button class="btn btn--ghost" type="button" [disabled]="isBusy('ledger')" (click)="downloadLedger('pdf')">Registro detallado · PDF</button>
+        <button class="btn btn--sm btn--primary" type="button" [disabled]="isBusy('finance')" (click)="downloadFinance('xlsx')">Resumen Excel</button>
+        <button class="btn btn--sm btn--ghost" type="button" [disabled]="isBusy('finance')" (click)="downloadFinance('pdf')">Resumen PDF</button>
+        <button class="btn btn--sm btn--primary" type="button" [disabled]="isBusy('ledger')" (click)="downloadLedger('xlsx')">Registro Excel</button>
+        <button class="btn btn--sm btn--ghost" type="button" [disabled]="isBusy('ledger')" (click)="downloadLedger('pdf')">Registro PDF</button>
       </div>
-      <p class="muted">El resumen requiere un proyecto. El registro detallado lista cada ingreso y gasto; sin proyecto incluye todos.</p>
+      <p class="muted note">El resumen requiere un proyecto. El registro detallado lista cada ingreso y gasto; sin proyecto incluye todos.</p>
       @if (errors()['finance']; as message) {
         <p class="alert" role="alert">{{ message }}</p>
       }

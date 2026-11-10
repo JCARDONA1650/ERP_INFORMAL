@@ -11,10 +11,20 @@
 
 .actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   margin-top: 1rem;
 }
 
+.panel {
+  min-width: 0;
+}
+
 .alert {
   margin: 0.75rem 0 0;
+}
+
+.note {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
 }
