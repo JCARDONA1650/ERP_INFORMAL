@@ -9,7 +9,7 @@ import { ProjectsPage } from './projects-page';
 
 const page = (results: unknown[]) => ({ count: results.length, next: null, previous: null, results });
 const MONTEGO: Project = {
-  id: 1, name: 'Montego', slug: 'montego', active: true, contract_value: '1000.00', contract_currency: 'USD',
+  id: 1, name: 'Montego', slug: 'montego', active: true, contract_value: '1000.00', contract_currency: 'USD', photo_required: true,
   site: { latitude: '28.500000', longitude: '-81.400000', radius_m: 200, out_of_zone_policy: 'block', address: '' },
   supervisors: [5], employees: [3],
 };
@@ -85,7 +85,7 @@ describe('ProjectsPage', () => {
     submit();
     const req = http.expectOne((r) => r.method === 'POST');
     expect(req.request.body).toEqual({
-      name: 'Torre Norte', contract_value: '0', contract_currency: 'USD',
+      name: 'Torre Norte', contract_value: '0', contract_currency: 'USD', photo_required: true,
       site: { latitude: 28.5, longitude: -81.4, radius_m: 150, out_of_zone_policy: 'block', address: '' },
       supervisors: [5], employees: [3],
     });
@@ -149,6 +149,18 @@ describe('ProjectsPage', () => {
     http.expectOne((r) => r.method === 'POST').flush({ name: ['Ya existe un proyecto con ese nombre.'] }, { status: 400, statusText: 'Bad Request' });
     fixture.detectChanges();
     expect(el.querySelector('.project-form [role="alert"]')?.textContent).toContain('Ya existe');
+  });
+
+  it('permite marcar la foto como opcional y lo envía a la API', () => {
+    setup();
+    btn('Editar').click();
+    fixture.detectChanges();
+    check('Foto obligatoria');
+    submit();
+    const req = http.expectOne('/api/projects/1/');
+    expect(req.request.body.photo_required).toBe(false);
+    req.flush({ ...MONTEGO, photo_required: false });
+    listReq().flush(page([MONTEGO]));
   });
 
   it('desactiva un proyecto sin borrarlo', () => {

@@ -41,7 +41,7 @@ class ProjectSerializer(serializers.ModelSerializer):
         # qr_secret se omite a propósito: firma el QR y nunca sale por la API.
         fields = [
             "id", "name", "slug", "contract_value", "contract_currency",
-            "active", "site", "supervisors", "employees",
+            "active", "photo_required", "site", "supervisors", "employees",
         ]
         read_only_fields = ["id", "slug"]
 

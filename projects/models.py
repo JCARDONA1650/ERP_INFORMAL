@@ -37,6 +37,9 @@ class Project(models.Model):
         max_length=64, default=secrets.token_urlsafe, editable=False
     )
 
+    # Si es True, toda marcación (QR o asistida) debe traer una foto tomada en el momento.
+    photo_required = models.BooleanField("Foto obligatoria al marcar", default=True)
+
     active = models.BooleanField("Activo", default=True)
 
     class Meta:

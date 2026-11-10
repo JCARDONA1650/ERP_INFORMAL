@@ -51,6 +51,7 @@ export class ProjectsPage implements OnInit {
     name: '',
     contract_value: this.fb.nonNullable.control<string | number>('0'),
     contract_currency: 'USD',
+    photo_required: true,
     hasSite: false,
     latitude: this.fb.nonNullable.control<string | number>(''),
     longitude: this.fb.nonNullable.control<string | number>(''),
@@ -83,7 +84,7 @@ export class ProjectsPage implements OnInit {
   protected openNew(): void {
     this.editing.set(null);
     this.formError.set(null);
-    this.form.reset({ name: '', contract_value: '0', contract_currency: 'USD', hasSite: false, latitude: '', longitude: '', radius_m: 150, out_of_zone_policy: 'block', address: '' });
+    this.form.reset({ name: '', contract_value: '0', contract_currency: 'USD', photo_required: true, hasSite: false, latitude: '', longitude: '', radius_m: 150, out_of_zone_policy: 'block', address: '' });
     this.resetAddressSearch('');
     this.selectedSupervisors.set([]);
     this.selectedEmployees.set([]);
@@ -98,6 +99,7 @@ export class ProjectsPage implements OnInit {
       name: p.name,
       contract_value: p.contract_value,
       contract_currency: p.contract_currency,
+      photo_required: p.photo_required ?? true,
       hasSite: p.site !== null,
       latitude: p.site?.latitude ?? '',
       longitude: p.site?.longitude ?? '',
@@ -254,6 +256,7 @@ export class ProjectsPage implements OnInit {
       name: v.name.trim(),
       contract_value: contract,
       contract_currency: v.contract_currency,
+      photo_required: v.photo_required,
       site,
       supervisors: this.selectedSupervisors(),
       employees: this.selectedEmployees(),

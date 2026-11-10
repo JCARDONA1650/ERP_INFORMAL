@@ -27,6 +27,8 @@ export interface ProjectSite {
 export interface Project extends ProjectSummary {
   contract_value: string;
   contract_currency: string;
+  /** Si es true, toda marcación debe traer foto tomada en el momento. */
+  photo_required: boolean;
   site: ProjectSite | null;
   supervisors: number[];
   employees: number[];
@@ -36,6 +38,7 @@ export interface ProjectBody {
   name?: string;
   contract_value?: string;
   contract_currency?: string;
+  photo_required?: boolean;
   active?: boolean;
   site?: {
     latitude: number;
