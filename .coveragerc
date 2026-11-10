@@ -1,0 +1,20 @@
+[run]
+source = .
+branch = True
+omit =
+    */migrations/*
+    */tests*.py
+    */tests/*
+    manage.py
+    core/wsgi.py
+    core/asgi.py
+    frontend/*
+    */node_modules/*
+
+[report]
+show_missing = True
+skip_covered = False
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+    raise NotImplementedError
