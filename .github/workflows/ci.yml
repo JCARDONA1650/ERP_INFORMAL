@@ -46,9 +46,9 @@ jobs:
       POSTGRES_PORT: "5432"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
@@ -60,6 +60,14 @@ jobs:
       - name: Verificar que no falten migraciones
         run: python manage.py makemigrations --check --dry-run
 
+      - name: Verificar configuración de despliegue
+        # BEHIND_PROXY/SSL_REDIRECT solo para este paso: con el resto del job
+        # encendidos, el test client (http plano) recibiría 301 en todo.
+        env:
+          DJANGO_BEHIND_PROXY: "1"
+          DJANGO_SSL_REDIRECT: "1"
+        run: python manage.py check --deploy
+
       - name: Pruebas con cobertura
         run: |
           coverage run manage.py test --noinput
@@ -67,7 +75,7 @@ jobs:
           coverage xml
 
       - name: Publicar reporte de cobertura
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: backend-coverage
           path: coverage.xml
@@ -83,9 +91,9 @@ jobs:
         working-directory: frontend
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: npm
