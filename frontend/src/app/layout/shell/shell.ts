@@ -3,12 +3,13 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { AppFooter } from '../../shared/footer/app-footer';
+import { LangSwitch } from '../../shared/lang-switch/lang-switch';
 import { Logo } from '../../shared/logo/logo';
 import { NAV_ITEMS } from './nav';
 
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, Logo, AppFooter],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, Logo, AppFooter, LangSwitch],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
 })

@@ -1,8 +1,122 @@
 <main class="privacy">
   <div class="privacy__brand">
     <app-logo [size]="44" />
-    <h1>Política de tratamiento de datos personales</h1>
+    <h1>{{ en() ? 'Personal data processing policy' : 'Política de tratamiento de datos personales' }}</h1>
   </div>
+
+  @if (en()) {
+  <p class="muted">ERP INFORMAL · Version 1.0 · In force since November 2026 · Applies to organizations and staff in Florida (USA)</p>
+
+  <h2>1. Scope and roles</h2>
+  <p>
+    This policy governs the personal data processed by ERP INFORMAL, a site attendance, payroll and financial control
+    system. It distinguishes two roles:
+  </p>
+  <ul>
+    <li>
+      <strong>User organization (controller):</strong> the company that employs the staff and decides how their data is
+      used. It is the “covered entity” under Florida law.
+    </li>
+    <li>
+      <strong>Jorge Cardona, Systems Engineer (system provider):</strong> maintains and processes the data on behalf of
+      the user organization. It is the “third-party agent” under Florida law.
+    </li>
+  </ul>
+
+  <h2>2. Data processed</h2>
+  <ul>
+    <li><strong>Identification and employment:</strong> full name, ID number (optional), position, pay type and rate.</li>
+    <li><strong>Attendance:</strong> date and time of clock-in and clock-out, project, device and clock-in origin.</li>
+    <li><strong>Proof photo</strong> taken when clocking in.</li>
+    <li><strong>Geolocation:</strong> latitude and longitude <strong>only at the moment of clocking in</strong>.</li>
+    <li><strong>User accounts (administrative staff):</strong> username, name, optional email, role and access records.</li>
+    <li><strong>Audit log:</strong> who adjusted, closed, downloaded or changed what, and when (never passwords).</li>
+  </ul>
+  <p>
+    The system does not process biometric identification data, medical records, bank account numbers or social security
+    numbers. If the organization decides to load them, protecting them under section 7 is its responsibility.
+  </p>
+
+  <h2>3. Purposes</h2>
+  <p>
+    (a) Validate attendance in the work zone; (b) calculate hours and payroll; (c) keep control of income and expenses
+    per project; (d) audit sensitive changes; (e) protect system security. Data is not sold, not used for advertising or
+    profiling, and not shared with third parties except by legal obligation or with infrastructure providers that process
+    it under the same security measures.
+  </p>
+
+  <h2>4. Geolocation and consent</h2>
+  <p>
+    Location is sensitive data: Florida’s information security law (Fla. Stat. § 501.171) includes it among the data that,
+    combined with a person’s name, must be protected. Therefore:
+  </p>
+  <ul>
+    <li>
+      <strong>No tracking.</strong> The system installs no trackers and does not query the worker’s position outside the
+      clock-in, in line with the prohibition on tracking a person without consent (Fla. Stat. § 934.425).
+    </li>
+    <li>
+      <strong>Consent at every clock-in.</strong> Before submitting, the screen states that the photo and the location of
+      that moment will be saved; the worker is the one who turns on the browser GPS and presses “Submit”.
+    </li>
+    <li>
+      <strong>Refusal.</strong> If the worker does not share their location, they cannot be recorded on projects that
+      require being inside the zone; they must tell their supervisor so it is handled through the channel the organization
+      defines, without retaliation for exercising this option.
+    </li>
+    <li>
+      <strong>Limited use.</strong> Location is only used to compare the distance to the site point and decide whether the
+      clock-in is valid or left for review.
+    </li>
+  </ul>
+
+  <h2>5. Who can access the data</h2>
+  <p>
+    Access is limited by role: the Supervisor only sees assigned projects; HR and the Administrator see workers, attendance
+    and payroll; project finances belong to the Administrator; user management is done by the Administrator (Administrators
+    are created by the Super Admin). Report downloads are logged.
+  </p>
+
+  <h2>6. Retention and disposal</h2>
+  <p>
+    Data is kept as long as needed for payroll and the organization’s labor, accounting and legal obligations. Workers are
+    not deleted, they are deactivated, to keep the payment history. When a record with personal information no longer needs
+    to be kept, it is destroyed or modified to be unreadable, as required by Fla. Stat. § 501.171(8). Proof photos must be
+    purged according to the period set by the organization.
+  </p>
+
+  <h2>7. Security</h2>
+  <p>
+    “Reasonable measures” are applied (Fla. Stat. § 501.171(2)): hashed passwords and temporary passwords that must be
+    changed; sessions with expiry and controlled renewal; role-based permissions; attempt limits; security headers and
+    encrypted connection (HTTPS) in production; and a log of sensitive actions. Database backups are the responsibility of
+    the user organization.
+  </p>
+
+  <h2>8. Security incidents</h2>
+  <p>In case of unauthorized access to personal data in electronic form:</p>
+  <ul>
+    <li>The provider (Jorge Cardona) notifies the user organization as soon as possible and <strong>within 10 days at most</strong> after confirming or suspecting the breach.</li>
+    <li>The organization notifies affected individuals <strong>within 30 days at most</strong>, by email or in writing, stating the estimated date, the data affected and how to contact it.</li>
+    <li>If the breach affects <strong>500 or more people in Florida</strong>, the organization also notifies the Department of Legal Affairs (Florida Attorney General) within the same 30 days; and credit reporting agencies if more than 1,000.</li>
+    <li>The organization keeps the incident assessment in writing (at least 5 years when it concludes no notice is required).</li>
+  </ul>
+
+  <h2>9. Individual rights</h2>
+  <p>
+    Each person may ask their employer to: know what data about them is processed, correct it, have its use explained, and
+    withdraw consent for location and photo in future clock-ins (which may mean their attendance must be recorded another
+    way). Florida’s digital privacy law (Digital Bill of Rights, Fla. Stat. ch. 501, part V) targets large technology
+    companies and does not bind this organization by size, but this policy adopts its principles of transparency and
+    minimization. For people in Colombia, habeas data rights (Law 1581 of 2012) also apply.
+  </p>
+
+  <h2>10. Contact and changes</h2>
+  <p>
+    Requests go to the administrator of the user organization, who may escalate them to the system provider: Jorge Cardona ·
+    Systems Engineer. This policy may be updated; the current version is the one published on this page.
+  </p>
+  } @else {
   <p class="muted">ERP INFORMAL · Versión 1.0 · Vigente desde noviembre de 2026 · Aplicable a organizaciones y personal en Florida (EE. UU.)</p>
 
   <h2>1. Alcance y roles</h2>
@@ -117,6 +231,7 @@
     Las solicitudes se dirigen al administrador de la organización usuaria, que puede escalarlas al proveedor del sistema:
     Jorge Cardona · Ing. Sistemas. Esta política puede actualizarse; la versión vigente es la publicada en esta página.
   </p>
+  }
 
   <p><a routerLink="/">Volver</a></p>
   <app-footer />

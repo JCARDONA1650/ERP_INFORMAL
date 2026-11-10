@@ -15,6 +15,7 @@
         <small>{{ user()?.roles?.join(' · ') }}</small>
       </div>
       <div class="shell__actions">
+        <app-lang-switch />
         <a class="btn btn--ghost" routerLink="/cambiar-clave">Cambiar contraseña</a>
         <button class="btn btn--ghost" type="button" (click)="logout()">Cerrar sesión</button>
       </div>

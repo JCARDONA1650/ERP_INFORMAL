@@ -84,6 +84,12 @@ body {
 }
 
 /* Marca: logo + nombre en una fila. */
+.login__lang {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
+}
+
 .brand-row {
   display: flex;
   align-items: center;
