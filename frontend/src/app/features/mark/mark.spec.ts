@@ -60,6 +60,45 @@ describe('Mark', () => {
     expect(el.querySelectorAll('#employee option').length).toBe(2); // placeholder + Ana
   });
 
+  it('con zona de obra indica si el trabajador está dentro o fuera', async () => {
+    TestBed.configureTestingModule({ imports: [Mark], providers: [provideHttpClient(), provideHttpClientTesting()] });
+    http = TestBed.inject(HttpTestingController);
+    fixture = TestBed.createComponent(Mark);
+    fixture.componentRef.setInput('slug', 'montego');
+    fixture.componentRef.setInput('t', 'tok');
+    fixture.detectChanges();
+    ctxReq().flush({
+      ...CONTEXT,
+      site: { latitude: 28.5, longitude: -81.4, radius_m: 150, out_of_zone_policy: 'block' },
+    });
+    fixture.detectChanges();
+    el = fixture.nativeElement as HTMLElement;
+
+    // jsdom no trae geolocalización: se simula la posición del dispositivo.
+    const at = (lat: number, lng: number) =>
+      Object.defineProperty(navigator, 'geolocation', {
+        configurable: true,
+        value: {
+          getCurrentPosition: (ok: (p: GeolocationPosition) => void) =>
+            ok({ coords: { latitude: lat, longitude: lng } } as GeolocationPosition),
+        },
+      });
+    const verify = async () => {
+      (Array.from(el.querySelectorAll('button')).find((b) => b.textContent?.includes('Verificar')) as HTMLButtonElement).click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+    };
+
+    at(28.5005, -81.4); // ~55 m
+    await verify();
+    expect(el.textContent).toContain('dentro de la zona');
+
+    at(28.52, -81.4); // ~2 km
+    await verify();
+    expect(el.textContent).toContain('fuera de la zona');
+    expect(el.textContent).toContain('No podrás registrar');
+  });
+
   it('con QR vencido muestra un mensaje claro y no el formulario', async () => {
     await setup(403);
     expect(el.querySelector('[role="alert"]')?.textContent).toContain('venció');

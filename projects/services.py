@@ -16,14 +16,22 @@ def haversine_m(lat1, lon1, lat2, lon2) -> float:
     return 2 * EARTH_RADIUS_M * math.asin(math.sqrt(a))
 
 
-def is_in_zone(project: Project, latitude, longitude):
-    """True/False si hay zona y coordenadas; None si no se puede determinar.
-    Estar fuera de la zona no bloquea la marcación: solo la deja para revisión."""
+def distance_to_site_m(project: Project, latitude, longitude):
+    """Metros entre un punto y el centro de la zona; None si no se puede calcular."""
     site = getattr(project, "site", None)
     if site is None or latitude is None or longitude is None:
         return None
-    distance = haversine_m(site.latitude, site.longitude, latitude, longitude)
-    return distance <= site.radius_m
+    return haversine_m(site.latitude, site.longitude, latitude, longitude)
+
+
+def is_in_zone(project: Project, latitude, longitude):
+    """True/False si hay zona y coordenadas; None si no se puede determinar.
+    Qué se hace al estar fuera lo decide `site.out_of_zone_policy`
+    (rechazar o dejar para revisión); eso se aplica en `register_scan`."""
+    distance = distance_to_site_m(project, latitude, longitude)
+    if distance is None:
+        return None
+    return distance <= project.site.radius_m
 
 
 def user_can_access_project(user, project: Project) -> bool:
@@ -54,7 +62,7 @@ def save_project_site(project: Project, data):
         project=project,
         defaults={"latitude": data["latitude"], "longitude": data["longitude"]},
     )
-    for key in ("latitude", "longitude", "radius_m"):
+    for key in ("latitude", "longitude", "radius_m", "out_of_zone_policy"):
         if key in data:
             setattr(site, key, data[key])
     site.save()

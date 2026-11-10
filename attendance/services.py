@@ -69,7 +69,8 @@ from decimal import ROUND_HALF_UP, Decimal
 from django.db import models, transaction
 from django.utils import timezone
 
-from projects.services import is_in_zone
+from projects.models import POLICY_BLOCK
+from projects.services import distance_to_site_m, is_in_zone
 
 from .models import Attendance, AttendanceScan
 
@@ -113,7 +114,8 @@ def register_scan(
     """Registra un ingreso ('in') o salida ('out').
 
     - Idempotente por `client_uuid` (reintentos offline no duplican).
-    - Fuera de zona NO bloquea: marca la jornada `needs_review`.
+    - Fuera de zona: según `site.out_of_zone_policy` se rechaza (block, por defecto)
+      o se acepta y marca la jornada `needs_review` (review).
     - Salida sin ingreso previo => ScanError.
     """
     if action not in ("in", "out"):
@@ -134,6 +136,20 @@ def register_scan(
 
     latitude, longitude = _coord(latitude), _coord(longitude)
     in_zone = is_in_zone(project, latitude, longitude)
+
+    # Política del proyecto: con "block" solo se acepta una marcación verificada dentro de la zona.
+    site = getattr(project, "site", None)
+    if site is not None and site.out_of_zone_policy == POLICY_BLOCK and in_zone is not True:
+        if in_zone is None:
+            raise ScanError(
+                "Este proyecto exige ubicación. Activa el GPS y permite el acceso para marcar."
+            )
+        meters = round(distance_to_site_m(project, latitude, longitude))
+        raise ScanError(
+            f"Estás fuera de la zona de obra (a {meters} m; el máximo es {site.radius_m} m). "
+            "No se registró la marcación."
+        )
+
     project.employees.add(employee)
 
     AttendanceScan.objects.create(

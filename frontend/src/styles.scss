@@ -80,6 +80,16 @@ body {
   }
 }
 
+/* Mapa (Leaflet): el pin se dibuja con CSS para no depender de imágenes externas. */
+.site-pin {
+  width: 18px;
+  height: 18px;
+  border: 3px solid #0b0f14;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
 /* Impresión (QR del proyecto): oculta la navegación y los controles. */
 @media print {
   .shell__side,

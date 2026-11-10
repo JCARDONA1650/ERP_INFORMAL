@@ -23,6 +23,9 @@
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
+            "allowedCommonJsDependencies": [
+              "leaflet"
+            ],
             "assets": [
               {
                 "glob": "**/*",
@@ -30,6 +33,7 @@
               }
             ],
             "styles": [
+              "node_modules/leaflet/dist/leaflet.css",
               "src/styles.scss"
             ]
           },

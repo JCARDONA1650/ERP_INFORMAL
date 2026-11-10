@@ -66,9 +66,17 @@ class ScanContextView(_PublicScanView):
     def get(self, request, slug):
         project = self.load_project(request, slug)
         employees = project.employees.filter(active=True).order_by("full_name")
+        site = getattr(project, "site", None)
         return Response(
             {
                 "project": {"name": project.name, "slug": project.slug},
+                # La zona se expone solo con QR válido: permite mostrar "dentro/fuera" al trabajador.
+                "site": None if site is None else {
+                    "latitude": float(site.latitude),
+                    "longitude": float(site.longitude),
+                    "radius_m": site.radius_m,
+                    "out_of_zone_policy": site.out_of_zone_policy,
+                },
                 "employees": [{"id": e.pk, "full_name": e.full_name} for e in employees],
             }
         )

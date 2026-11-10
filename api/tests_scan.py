@@ -27,8 +27,9 @@ class ScanApiTests(APITestCase):
     def setUp(self):
         cache.clear()
         self.project = Project.objects.create(name="Montego")
-        ProjectSite.objects.create(
-            project=self.project, latitude="28.500000", longitude="-81.400000", radius_m=150
+        self.site = ProjectSite.objects.create(
+            project=self.project, latitude="28.500000", longitude="-81.400000",
+            radius_m=150, out_of_zone_policy="review",
         )
         self.ana = Employee.objects.create(full_name="Ana Gomez")
         self.inactive = Employee.objects.create(full_name="Inactivo Uno", active=False)
@@ -121,6 +122,38 @@ class ScanApiTests(APITestCase):
         r = self.post({"latitude": 28.5005, "longitude": -81.4})
         self.assertTrue(r.data["in_zone"])
         self.assertFalse(Attendance.objects.get().needs_review)
+
+    # ── política fuera de zona = block ──
+    def _block(self):
+        self.site.out_of_zone_policy = "block"
+        self.site.save()
+
+    def test_block_rechaza_fuera_de_zona_y_no_registra(self):
+        self._block()
+        r = self.post({"latitude": 28.52, "longitude": -81.4})
+        self.assertEqual(r.status_code, 409)
+        self.assertIn("fuera de la zona", r.data["detail"])
+        self.assertEqual(AttendanceScan.objects.count(), 0)
+        self.assertEqual(Attendance.objects.count(), 0)
+
+    def test_block_exige_ubicacion(self):
+        self._block()
+        r = self.post()
+        self.assertEqual(r.status_code, 409)
+        self.assertIn("ubicación", r.data["detail"])
+        self.assertEqual(AttendanceScan.objects.count(), 0)
+
+    def test_block_acepta_dentro_de_zona(self):
+        self._block()
+        r = self.post({"latitude": 28.5005, "longitude": -81.4})
+        self.assertEqual(r.status_code, 201)
+        self.assertTrue(r.data["in_zone"])
+
+    def test_contexto_expone_zona_y_politica(self):
+        self._block()
+        site = self.client.get(self.ctx).data["site"]
+        self.assertEqual(site["radius_m"], 150)
+        self.assertEqual(site["out_of_zone_policy"], "block")
 
     def test_coordenadas_invalidas(self):
         self.assertEqual(self.post({"latitude": 95, "longitude": 0}).status_code, 400)

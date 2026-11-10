@@ -1,14 +1,17 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 
 import { Project } from '../../core/projects/projects.service';
+import { SiteMap } from '../../shared/site-map/site-map';
 import { ProjectsPage } from './projects-page';
 
 const page = (results: unknown[]) => ({ count: results.length, next: null, previous: null, results });
 const MONTEGO: Project = {
   id: 1, name: 'Montego', slug: 'montego', active: true, contract_value: '1000.00', contract_currency: 'USD',
-  site: { latitude: '28.500000', longitude: '-81.400000', radius_m: 200 }, supervisors: [5], employees: [3],
+  site: { latitude: '28.500000', longitude: '-81.400000', radius_m: 200, out_of_zone_policy: 'block' },
+  supervisors: [5], employees: [3],
 };
 const SUPERVISORS = [{ id: 5, username: 'sup', full_name: 'Sara Sup' }, { id: 6, username: 'otro', full_name: 'Otro Sup' }];
 const EMPLOYEES = [
@@ -83,7 +86,8 @@ describe('ProjectsPage', () => {
     const req = http.expectOne((r) => r.method === 'POST');
     expect(req.request.body).toEqual({
       name: 'Torre Norte', contract_value: '0', contract_currency: 'USD',
-      site: { latitude: 28.5, longitude: -81.4, radius_m: 150 }, supervisors: [5], employees: [3],
+      site: { latitude: 28.5, longitude: -81.4, radius_m: 150, out_of_zone_policy: 'block' },
+      supervisors: [5], employees: [3],
     });
     req.flush({ ...MONTEGO, id: 2 });
     listReq().flush(page([MONTEGO]));
@@ -157,14 +161,31 @@ describe('ProjectsPage', () => {
     expect(el.textContent).toContain('Inactivo');
   });
 
-  it('el enlace al mapa solo aparece con coordenadas válidas', () => {
+  it('muestra el mapa con la zona y permite elegir la política fuera de zona', () => {
     setup();
     btn('Editar').click();
     fixture.detectChanges();
-    expect(el.querySelector('a[href*="google.com/maps?q=28.5,-81.4"]')).not.toBeNull();
-    expect(el.querySelector('a[rel~="noopener"]')).not.toBeNull();
-    fill('.project-form input[formControlName="latitude"]', '');
+    expect(el.querySelector('app-site-map .leaflet-container')).not.toBeNull();
+    const policy = el.querySelector('select[formControlName="out_of_zone_policy"]') as HTMLSelectElement;
+    expect(policy.value).toBe('block');
+
+    policy.value = 'review';
+    policy.dispatchEvent(new Event('change'));
+    submit();
+    const req = http.expectOne('/api/projects/1/');
+    expect(req.request.body.site.out_of_zone_policy).toBe('review');
+    req.flush(MONTEGO);
+    listReq().flush(page([MONTEGO]));
+  });
+
+  it('el punto movido en el mapa actualiza latitud y longitud', () => {
+    setup();
+    btn('Editar').click();
     fixture.detectChanges();
-    expect(el.querySelector('a[href*="google.com/maps"]')).toBeNull();
+    const map = fixture.debugElement.query(By.directive(SiteMap)).componentInstance as SiteMap;
+    map.pointChange.emit({ lat: 28.6, lng: -81.3 });
+    fixture.detectChanges();
+    expect((el.querySelector('input[formControlName="latitude"]') as HTMLInputElement).value).toBe('28.6');
+    expect((el.querySelector('input[formControlName="longitude"]') as HTMLInputElement).value).toBe('-81.3');
   });
 });

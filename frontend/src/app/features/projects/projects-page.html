@@ -44,10 +44,26 @@
           <button class="btn btn--ghost btn--sm" type="button" [disabled]="locating()" (click)="useMyLocation()">
             {{ locating() ? 'Ubicando…' : 'Usar mi ubicación' }}
           </button>
-          @if (mapsUrl(); as url) {
-            <a class="btn btn--ghost btn--sm" [href]="url" target="_blank" rel="noopener noreferrer">Ver en el mapa</a>
-          }
         </div>
+
+        <p class="muted hint">Haz clic en el mapa o arrastra el punto para fijar la zona de obra. El círculo es el radio donde se permite marcar.</p>
+        <app-site-map
+          [lat]="mapLat()"
+          [lng]="mapLng()"
+          [radius]="mapRadius()"
+          [editable]="true"
+          [height]="320"
+          (pointChange)="onMapPoint($event)"
+        />
+
+        <label class="policy">
+          Si el trabajador marca fuera de la zona
+          <select formControlName="out_of_zone_policy">
+            <option value="block">Rechazar la marcación (no se registra)</option>
+            <option value="review">Permitirla y dejarla para revisión</option>
+          </select>
+        </label>
+        <p class="muted hint">Con «Rechazar», también se rechaza si el trabajador no comparte su ubicación.</p>
       }
     </fieldset>
 
@@ -98,7 +114,7 @@
         <tr>
           <td>{{ p.name }}</td>
           <td class="num">{{ money(p.contract_value, p.contract_currency) }}</td>
-          <td>{{ p.site ? p.site.radius_m + ' m' : 'Sin zona' }}</td>
+          <td>{{ p.site ? p.site.radius_m + ' m · ' + (p.site.out_of_zone_policy === 'block' ? 'rechaza' : 'revisión') : 'Sin zona' }}</td>
           <td class="num">{{ p.supervisors.length }}</td>
           <td class="num">{{ p.employees.length }}</td>
           <td>@if (p.active) { <span class="badge badge--ok">Activo</span> } @else { <span class="badge">Inactivo</span> }</td>

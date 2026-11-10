@@ -12,10 +12,14 @@ export interface ProjectSummary {
   active: boolean;
 }
 
+/** `block` rechaza marcar fuera de la zona; `review` lo acepta y lo deja para revisión. */
+export type OutOfZonePolicy = 'block' | 'review';
+
 export interface ProjectSite {
   latitude: number | string;
   longitude: number | string;
   radius_m: number;
+  out_of_zone_policy: OutOfZonePolicy;
 }
 
 /** Proyecto completo tal como lo devuelve la API de gestión. */
@@ -32,7 +36,12 @@ export interface ProjectBody {
   contract_value?: string;
   contract_currency?: string;
   active?: boolean;
-  site?: { latitude: number; longitude: number; radius_m: number } | null;
+  site?: {
+    latitude: number;
+    longitude: number;
+    radius_m: number;
+    out_of_zone_policy: OutOfZonePolicy;
+  } | null;
   supervisors?: number[];
   employees?: number[];
 }

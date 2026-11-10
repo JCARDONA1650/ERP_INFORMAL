@@ -194,9 +194,21 @@ class RegisterScanTests(BaseCase):
         with self.assertRaises(ScanError):
             register_scan(self.project, self.emp, "in")
 
-    def test_fuera_de_zona_marca_revision_sin_bloquear(self):
+    def test_fuera_de_zona_con_block_rechaza(self):
         ProjectSite.objects.create(
             project=self.project, latitude="28.500000", longitude="-81.400000", radius_m=150
+        )  # política por defecto: block
+        project = Project.objects.get(pk=self.project.pk)
+        with self.assertRaises(ScanError):
+            register_scan(project, self.emp, "in", latitude=28.52, longitude=-81.4)
+        with self.assertRaises(ScanError):  # sin ubicación tampoco se puede verificar
+            register_scan(project, self.emp, "in")
+        self.assertFalse(Attendance.objects.exists())
+
+    def test_fuera_de_zona_marca_revision_sin_bloquear(self):
+        ProjectSite.objects.create(
+            project=self.project, latitude="28.500000", longitude="-81.400000",
+            radius_m=150, out_of_zone_policy="review",
         )
         project = Project.objects.get(pk=self.project.pk)
         r = register_scan(project, self.emp, "in", latitude=28.52, longitude=-81.4)
@@ -207,7 +219,7 @@ class RegisterScanTests(BaseCase):
     def test_dentro_de_zona_no_requiere_revision(self):
         ProjectSite.objects.create(
             project=self.project, latitude="28.500000", longitude="-81.400000", radius_m=150
-        )
+        )  # con block también se acepta si está dentro
         project = Project.objects.get(pk=self.project.pk)
         r = register_scan(project, self.emp, "in", latitude=28.5005, longitude=-81.4)
         self.assertTrue(r.in_zone)

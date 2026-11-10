@@ -62,6 +62,14 @@ class Project(models.Model):
         return self.name
 
 
+POLICY_BLOCK = "block"    # rechaza la marcación fuera de la zona
+POLICY_REVIEW = "review"  # la acepta y la deja pendiente de revisión
+OUT_OF_ZONE_CHOICES = [
+    (POLICY_BLOCK, "Rechazar marcación fuera de la zona"),
+    (POLICY_REVIEW, "Permitir y marcar para revisión"),
+]
+
+
 class ProjectSite(models.Model):
     """Zona de obra: punto central y radio. Define qué es 'dentro de la zona'."""
 
@@ -84,6 +92,13 @@ class ProjectSite(models.Model):
         "Radio permitido (m)",
         default=150,
         validators=[MinValueValidator(10), MaxValueValidator(5000)],
+    )
+    # Qué pasa si el trabajador marca fuera del radio (o sin ubicación).
+    out_of_zone_policy = models.CharField(
+        "Política fuera de zona",
+        max_length=10,
+        choices=OUT_OF_ZONE_CHOICES,
+        default=POLICY_BLOCK,
     )
 
     def clean(self):

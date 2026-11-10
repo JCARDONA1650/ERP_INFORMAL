@@ -6,6 +6,13 @@ import { API_URL } from '../config/api';
 
 export interface ScanContext {
   project: { name: string; slug: string };
+  /** Zona de obra y política fuera de zona; null si el proyecto no tiene zona. */
+  site: {
+    latitude: number;
+    longitude: number;
+    radius_m: number;
+    out_of_zone_policy: 'block' | 'review';
+  } | null;
   employees: { id: number; full_name: string }[];
 }
 

@@ -19,6 +19,36 @@
           <p class="mark__alert" role="alert">{{ message }}</p>
         }
 
+        @if (context()?.site; as site) {
+          <section class="zone" aria-label="Zona de obra">
+            <app-site-map
+              [lat]="site.latitude"
+              [lng]="site.longitude"
+              [radius]="site.radius_m"
+              [markers]="workerMarkers()"
+              [height]="200"
+              ariaLabel="Mapa de la zona de obra y tu ubicación"
+            />
+            @if (zone(); as z) {
+              <p [class]="z.inside ? 'mark__ok' : 'mark__alert'" role="status">
+                @if (z.inside) {
+                  Estás dentro de la zona de obra ({{ z.distance }} m del punto).
+                } @else {
+                  Estás fuera de la zona de obra (a {{ z.distance }} m; el máximo es {{ site.radius_m }} m).
+                  @if (site.out_of_zone_policy === 'block') { No podrás registrar la marcación desde aquí. }
+                  @else { La marcación quedará para revisión del supervisor. }
+                }
+              </p>
+            }
+            @if (zoneError(); as message) {
+              <p class="mark__alert" role="alert">{{ message }}</p>
+            }
+            <button class="btn btn--ghost" type="button" [disabled]="zoneChecking()" (click)="checkZone()">
+              {{ zoneChecking() ? 'Ubicando…' : 'Verificar mi ubicación' }}
+            </button>
+          </section>
+        }
+
         <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
           <div class="field">
             <label for="employee">Tu nombre</label>

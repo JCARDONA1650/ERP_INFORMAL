@@ -72,6 +72,7 @@ class ProjectApiTests(APITestCase):
         self.assertEqual(p.slug, "nuevo-proyecto")
         self.assertEqual(list(p.supervisors.all()), [self.sup2])
         self.assertEqual(p.site.radius_m, 150)
+        self.assertEqual(p.site.out_of_zone_policy, "block")  # por defecto
 
     def test_supervisor_debe_tener_rol(self):
         self.client.force_authenticate(self.adm)

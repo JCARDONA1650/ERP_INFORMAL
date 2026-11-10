@@ -1,15 +1,17 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit, inject, input, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ScanContext, ScanService } from '../../core/scan/scan.service';
+import { haversineM } from '../../core/util/geo';
 import { compressImage } from '../../core/util/image';
+import { MapMarker, SiteMap } from '../../shared/site-map/site-map';
 
 type Status = 'loading' | 'ready' | 'invalid';
 
 @Component({
   selector: 'app-mark',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, SiteMap],
   templateUrl: './mark.html',
   styleUrl: './mark.scss',
 })
@@ -48,6 +50,37 @@ export class Mark implements OnInit {
         this.error.set(this.messageFor(err));
       },
     });
+  }
+
+  /** Dónde está el trabajador respecto de la zona de obra (solo informativo; el servidor valida). */
+  protected readonly zone = signal<{
+    inside: boolean;
+    distance: number;
+    lat: number;
+    lng: number;
+  } | null>(null);
+  protected readonly zoneChecking = signal(false);
+  protected readonly zoneError = signal<string | null>(null);
+
+  protected readonly workerMarkers = computed<MapMarker[]>(() => {
+    const z = this.zone();
+    return z ? [{ lat: z.lat, lng: z.lng, label: 'Tú estás aquí', ok: z.inside }] : [];
+  });
+
+  protected async checkZone(): Promise<void> {
+    const site = this.context()?.site;
+    if (!site || this.zoneChecking()) return;
+    this.zoneChecking.set(true);
+    this.zoneError.set(null);
+    const { latitude, longitude } = await this.locate();
+    this.zoneChecking.set(false);
+    if (latitude === undefined || longitude === undefined) {
+      this.zone.set(null);
+      this.zoneError.set('No pudimos obtener tu ubicación. Activa el GPS y permite el acceso en el navegador.');
+      return;
+    }
+    const distance = Math.round(haversineM(site.latitude, site.longitude, latitude, longitude));
+    this.zone.set({ inside: distance <= site.radius_m, distance, lat: latitude, lng: longitude });
   }
 
   protected onPhoto(event: Event): void {

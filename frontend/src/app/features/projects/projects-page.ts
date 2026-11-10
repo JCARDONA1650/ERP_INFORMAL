@@ -1,8 +1,11 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 
 import { Employee, EmployeesService } from '../../core/employees/employees.service';
+import { MapPoint, SiteMap } from '../../shared/site-map/site-map';
 import {
+  OutOfZonePolicy,
   Project,
   ProjectBody,
   ProjectsService,
@@ -13,7 +16,7 @@ import { formatMoney } from '../../core/util/money';
 
 @Component({
   selector: 'app-projects-page',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, SiteMap],
   templateUrl: './projects-page.html',
   styleUrl: './projects-page.scss',
 })
@@ -51,6 +54,16 @@ export class ProjectsPage implements OnInit {
     latitude: this.fb.nonNullable.control<string | number>(''),
     longitude: this.fb.nonNullable.control<string | number>(''),
     radius_m: this.fb.nonNullable.control<string | number>(150),
+    out_of_zone_policy: this.fb.nonNullable.control<OutOfZonePolicy>('block'),
+  });
+
+  // Valores del formulario como signals: alimentan el mapa en vivo.
+  private readonly formValue = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
+  protected readonly mapLat = computed(() => this.toCoord(this.formValue().latitude, 90));
+  protected readonly mapLng = computed(() => this.toCoord(this.formValue().longitude, 180));
+  protected readonly mapRadius = computed(() => {
+    const r = Number(this.formValue().radius_m);
+    return Number.isFinite(r) && r > 0 ? r : 150;
   });
 
   ngOnInit(): void {
@@ -62,7 +75,7 @@ export class ProjectsPage implements OnInit {
   protected openNew(): void {
     this.editing.set(null);
     this.formError.set(null);
-    this.form.reset({ name: '', contract_value: '0', contract_currency: 'USD', hasSite: false, latitude: '', longitude: '', radius_m: 150 });
+    this.form.reset({ name: '', contract_value: '0', contract_currency: 'USD', hasSite: false, latitude: '', longitude: '', radius_m: 150, out_of_zone_policy: 'block' });
     this.selectedSupervisors.set([]);
     this.selectedEmployees.set([]);
     this.employeeFilter.set('');
@@ -80,6 +93,7 @@ export class ProjectsPage implements OnInit {
       latitude: p.site?.latitude ?? '',
       longitude: p.site?.longitude ?? '',
       radius_m: p.site?.radius_m ?? 150,
+      out_of_zone_policy: p.site?.out_of_zone_policy ?? 'block',
     });
     this.selectedSupervisors.set([...p.supervisors]);
     this.selectedEmployees.set([...p.employees]);
@@ -129,11 +143,15 @@ export class ProjectsPage implements OnInit {
     );
   }
 
-  protected mapsUrl(): string | null {
-    const { latitude, longitude } = this.form.getRawValue();
-    return this.validCoords(latitude, longitude)
-      ? `https://www.google.com/maps?q=${Number(latitude)},${Number(longitude)}`
-      : null;
+  /** El pin del mapa movió el punto: se refleja en los campos de latitud/longitud. */
+  protected onMapPoint(point: MapPoint): void {
+    this.form.patchValue({ hasSite: true, latitude: point.lat, longitude: point.lng });
+  }
+
+  private toCoord(value: string | number | undefined, limit: number): number | null {
+    const text = String(value ?? '').trim();
+    if (text === '' || Number.isNaN(Number(text)) || Math.abs(Number(text)) > limit) return null;
+    return Number(text);
   }
 
   protected save(): void {
@@ -154,7 +172,12 @@ export class ProjectsPage implements OnInit {
       if (!Number.isInteger(radius) || radius < 10 || radius > 5000) {
         return this.formError.set('El radio debe estar entre 10 y 5000 metros.');
       }
-      site = { latitude: Number(Number(v.latitude).toFixed(6)), longitude: Number(Number(v.longitude).toFixed(6)), radius_m: radius };
+      site = {
+        latitude: Number(Number(v.latitude).toFixed(6)),
+        longitude: Number(Number(v.longitude).toFixed(6)),
+        radius_m: radius,
+        out_of_zone_policy: v.out_of_zone_policy,
+      };
     }
 
     const body: ProjectBody = {
