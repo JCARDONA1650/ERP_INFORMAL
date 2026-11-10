@@ -20,6 +20,7 @@ export interface ProjectSite {
   longitude: number | string;
   radius_m: number;
   out_of_zone_policy: OutOfZonePolicy;
+  address: string;
 }
 
 /** Proyecto completo tal como lo devuelve la API de gestión. */
@@ -41,9 +42,16 @@ export interface ProjectBody {
     longitude: number;
     radius_m: number;
     out_of_zone_policy: OutOfZonePolicy;
+    address: string;
   } | null;
   supervisors?: number[];
   employees?: number[];
+}
+
+export interface AddressResult {
+  label: string;
+  latitude: number;
+  longitude: number;
 }
 
 export interface SupervisorOption {
@@ -77,6 +85,18 @@ export class ProjectsService {
 
   supervisors(): Observable<SupervisorOption[]> {
     return this.http.get<SupervisorOption[]>(`${API_URL}/users/supervisors/`);
+  }
+
+  /** Busca una dirección (hasta 5 resultados con coordenadas). */
+  searchAddress(query: string): Observable<{ results: AddressResult[] }> {
+    return this.http.get<{ results: AddressResult[] }>(`${API_URL}/geocode/search/`, { params: { q: query } });
+  }
+
+  /** Dirección aproximada de un punto del mapa. */
+  reverseAddress(lat: number, lon: number): Observable<{ address: string }> {
+    return this.http.get<{ address: string }>(`${API_URL}/geocode/reverse/`, {
+      params: { lat: String(lat), lon: String(lon) },
+    });
   }
 
   /** Enlace de marcación del día (lo que codifica el QR). */

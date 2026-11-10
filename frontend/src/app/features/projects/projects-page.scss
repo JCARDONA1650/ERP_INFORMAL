@@ -15,6 +15,69 @@
   }
 }
 
+.address {
+  margin: 0.75rem 0;
+
+  label {
+    display: block;
+    margin-bottom: 0.3rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  &__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+
+    input {
+      flex: 1 1 280px;
+    }
+  }
+
+  &__list {
+    margin: 0.5rem 0 0;
+    padding: 0;
+    list-style: none;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+
+    button {
+      display: block;
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      text-align: left;
+      background: var(--bg);
+      color: var(--text);
+      border: 0;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      font: inherit;
+
+      &:hover,
+      &:focus-visible {
+        background: var(--surface-2);
+        color: var(--accent);
+      }
+    }
+
+    li:last-child button {
+      border-bottom: 0;
+    }
+  }
+
+  &__saved {
+    margin: 0.5rem 0 0;
+    font-size: 0.9rem;
+  }
+}
+
+.addr {
+  display: block;
+  max-width: 320px;
+}
+
 .hint {
   margin: 0.5rem 0;
   font-size: 0.85rem;

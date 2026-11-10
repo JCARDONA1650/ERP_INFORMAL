@@ -62,7 +62,7 @@ def save_project_site(project: Project, data):
         project=project,
         defaults={"latitude": data["latitude"], "longitude": data["longitude"]},
     )
-    for key in ("latitude", "longitude", "radius_m", "out_of_zone_policy"):
+    for key in ("latitude", "longitude", "radius_m", "out_of_zone_policy", "address"):
         if key in data:
             setattr(site, key, data[key])
     site.save()

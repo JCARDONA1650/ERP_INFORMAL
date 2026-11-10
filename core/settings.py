@@ -166,7 +166,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "api.pagination.StandardPagination",
     "PAGE_SIZE": 25,
     "DEFAULT_THROTTLE_CLASSES": ["rest_framework.throttling.AnonRateThrottle"],
-    "DEFAULT_THROTTLE_RATES": {"anon": "30/min", "scan": "120/min"},
+    "DEFAULT_THROTTLE_RATES": {"anon": "30/min", "scan": "120/min", "geocode": "30/min"},
 }
 
 SIMPLE_JWT = {
@@ -175,6 +175,14 @@ SIMPLE_JWT = {
     "ROTATE_REFRESH_TOKENS": True,
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
+
+# ───────────────── Buscador de direcciones (Nominatim / OpenStreetMap) ─────────────────
+# Se consulta desde el servidor (User-Agent propio, caché y límite de uso, como pide la política de OSM).
+GEOCODER_URL = os.getenv("GEOCODER_URL", "https://nominatim.openstreetmap.org")
+GEOCODER_USER_AGENT = os.getenv(
+    "GEOCODER_USER_AGENT", "ERP-INFORMAL/1.0 (proyecto academico UNAD; github.com/JCARDONA1650/ERP_INFORMAL)"
+)
+GEOCODER_COUNTRIES = os.getenv("GEOCODER_COUNTRIES", "us")  # códigos ISO separados por coma
 
 # ───────────────── Logging ─────────────────
 LOGGING = {

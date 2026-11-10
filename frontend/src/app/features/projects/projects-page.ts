@@ -5,6 +5,7 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Employee, EmployeesService } from '../../core/employees/employees.service';
 import { MapPoint, SiteMap } from '../../shared/site-map/site-map';
 import {
+  AddressResult,
   OutOfZonePolicy,
   Project,
   ProjectBody,
@@ -55,7 +56,14 @@ export class ProjectsPage implements OnInit {
     longitude: this.fb.nonNullable.control<string | number>(''),
     radius_m: this.fb.nonNullable.control<string | number>(150),
     out_of_zone_policy: this.fb.nonNullable.control<OutOfZonePolicy>('block'),
+    address: '',
   });
+
+  /** Buscador de direcciones (no es parte del formulario guardado). */
+  protected readonly addressQuery = signal('');
+  protected readonly addressResults = signal<AddressResult[]>([]);
+  protected readonly searching = signal(false);
+  protected readonly addressMessage = signal<string | null>(null);
 
   // Valores del formulario como signals: alimentan el mapa en vivo.
   private readonly formValue = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
@@ -75,7 +83,8 @@ export class ProjectsPage implements OnInit {
   protected openNew(): void {
     this.editing.set(null);
     this.formError.set(null);
-    this.form.reset({ name: '', contract_value: '0', contract_currency: 'USD', hasSite: false, latitude: '', longitude: '', radius_m: 150, out_of_zone_policy: 'block' });
+    this.form.reset({ name: '', contract_value: '0', contract_currency: 'USD', hasSite: false, latitude: '', longitude: '', radius_m: 150, out_of_zone_policy: 'block', address: '' });
+    this.resetAddressSearch('');
     this.selectedSupervisors.set([]);
     this.selectedEmployees.set([]);
     this.employeeFilter.set('');
@@ -94,7 +103,9 @@ export class ProjectsPage implements OnInit {
       longitude: p.site?.longitude ?? '',
       radius_m: p.site?.radius_m ?? 150,
       out_of_zone_policy: p.site?.out_of_zone_policy ?? 'block',
+      address: p.site?.address ?? '',
     });
+    this.resetAddressSearch(p.site?.address ?? '');
     this.selectedSupervisors.set([...p.supervisors]);
     this.selectedEmployees.set([...p.employees]);
     this.employeeFilter.set('');
@@ -143,9 +154,67 @@ export class ProjectsPage implements OnInit {
     );
   }
 
+  protected setAddressQuery(event: Event): void {
+    this.addressQuery.set((event.target as HTMLInputElement).value);
+  }
+
+  /** Busca la dirección escrita y muestra opciones; al elegir una, el mapa apunta allí. */
+  protected searchAddress(): void {
+    const q = this.addressQuery().trim();
+    if (q.length < 3) {
+      this.addressMessage.set('Escribe al menos 3 caracteres de la dirección.');
+      return;
+    }
+    this.searching.set(true);
+    this.addressMessage.set(null);
+    this.addressResults.set([]);
+    this.api.searchAddress(q).subscribe({
+      next: ({ results }) => {
+        this.searching.set(false);
+        this.addressResults.set(results);
+        if (results.length === 0) {
+          this.addressMessage.set('No encontramos esa dirección. Prueba con calle, número y ciudad (ej.: 400 S Orange Ave, Orlando, FL).');
+        }
+      },
+      error: (err: unknown) => {
+        this.searching.set(false);
+        this.addressMessage.set(apiErrorMessage(err));
+      },
+    });
+  }
+
+  protected pickAddress(result: AddressResult): void {
+    this.form.patchValue({
+      hasSite: true,
+      latitude: result.latitude,
+      longitude: result.longitude,
+      address: result.label,
+    });
+    this.resetAddressSearch(result.label);
+  }
+
+  private resetAddressSearch(query: string): void {
+    this.addressQuery.set(query);
+    this.addressResults.set([]);
+    this.addressMessage.set(null);
+  }
+
   /** El pin del mapa movió el punto: se refleja en los campos de latitud/longitud. */
   protected onMapPoint(point: MapPoint): void {
-    this.form.patchValue({ hasSite: true, latitude: point.lat, longitude: point.lng });
+    this.form.patchValue({ hasSite: true, latitude: point.lat, longitude: point.lng, address: '' });
+    this.addressQuery.set('');
+    // Dirección aproximada del punto; si el servicio falla no pasa nada (es informativa).
+    this.api.reverseAddress(point.lat, point.lng).subscribe({
+      next: ({ address }) => {
+        const v = this.form.getRawValue();
+        // Solo si el punto no cambió mientras llegaba la respuesta.
+        if (Number(v.latitude) === point.lat && Number(v.longitude) === point.lng) {
+          this.form.patchValue({ address });
+          this.addressQuery.set(address);
+        }
+      },
+      error: () => undefined,
+    });
   }
 
   private toCoord(value: string | number | undefined, limit: number): number | null {
@@ -177,6 +246,7 @@ export class ProjectsPage implements OnInit {
         longitude: Number(Number(v.longitude).toFixed(6)),
         radius_m: radius,
         out_of_zone_policy: v.out_of_zone_policy,
+        address: v.address.trim().slice(0, 255),
       };
     }
 

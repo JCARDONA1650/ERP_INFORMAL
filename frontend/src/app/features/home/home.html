@@ -85,7 +85,7 @@
       <tbody>
         @for (p of d.projects; track p.id) {
           <tr>
-            <td>{{ p.name }}</td>
+            <td>{{ p.name }}@if (p.site?.address) { <small class="muted addr">{{ p.site?.address }}</small> }</td>
             <td class="num">{{ p.workers }}</td>
             <td class="num">{{ p.present_today }}</td>
             <td class="num">{{ p.pending_review }}</td>

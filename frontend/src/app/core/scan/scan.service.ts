@@ -12,6 +12,7 @@ export interface ScanContext {
     longitude: number;
     radius_m: number;
     out_of_zone_policy: 'block' | 'review';
+    address: string;
   } | null;
   employees: { id: number; full_name: string }[];
 }

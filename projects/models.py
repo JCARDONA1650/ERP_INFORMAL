@@ -93,6 +93,8 @@ class ProjectSite(models.Model):
         default=150,
         validators=[MinValueValidator(10), MaxValueValidator(5000)],
     )
+    # Dirección legible del punto (la devuelve el buscador de direcciones; es informativa).
+    address = models.CharField("Dirección", max_length=255, blank=True)
     # Qué pasa si el trabajador marca fuera del radio (o sin ubicación).
     out_of_zone_policy = models.CharField(
         "Política fuera de zona",

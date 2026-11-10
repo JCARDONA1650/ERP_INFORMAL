@@ -76,6 +76,7 @@ class ScanContextView(_PublicScanView):
                     "longitude": float(site.longitude),
                     "radius_m": site.radius_m,
                     "out_of_zone_policy": site.out_of_zone_policy,
+                    "address": site.address,
                 },
                 "employees": [{"id": e.pk, "full_name": e.full_name} for e in employees],
             }

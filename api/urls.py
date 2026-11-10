@@ -6,6 +6,7 @@ from . import views
 from .attendance import AttendanceViewSet
 from .dashboard import DashboardView
 from .employees import EmployeeViewSet
+from .geocode import AddressReverseView, AddressSearchView
 from .finance import ExpenseViewSet, IncomeViewSet, ProjectFinanceSummaryView
 from .payroll import PayrollLineAdjustView, PayrollPeriodViewSet
 from .projects import ProjectViewSet
@@ -40,6 +41,8 @@ urlpatterns = [
     path("reports/payroll/<int:pk>/<str:fmt>/", PayrollReportView.as_view(), name="report-payroll"),
     path("reports/attendance/<str:fmt>/", AttendanceReportView.as_view(), name="report-attendance"),
     path("reports/finance/<int:pk>/<str:fmt>/", FinanceReportView.as_view(), name="report-finance"),
+    path("geocode/search/", AddressSearchView.as_view(), name="api-geocode-search"),
+    path("geocode/reverse/", AddressReverseView.as_view(), name="api-geocode-reverse"),
     path("dashboard/", DashboardView.as_view(), name="api-dashboard"),
     path("auth/change-password/", ChangePasswordView.as_view(), name="api-change-password"),
     path("users/supervisors/", SupervisorListView.as_view(), name="api-supervisors"),

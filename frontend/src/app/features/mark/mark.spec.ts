@@ -70,7 +70,7 @@ describe('Mark', () => {
     fixture.detectChanges();
     ctxReq().flush({
       ...CONTEXT,
-      site: { latitude: 28.5, longitude: -81.4, radius_m: 150, out_of_zone_policy: 'block' },
+      site: { latitude: 28.5, longitude: -81.4, radius_m: 150, out_of_zone_policy: 'block', address: '' },
     });
     fixture.detectChanges();
     el = fixture.nativeElement as HTMLElement;

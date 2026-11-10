@@ -24,7 +24,7 @@ User = get_user_model()
 class ProjectSiteSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProjectSite
-        fields = ["latitude", "longitude", "radius_m", "out_of_zone_policy"]
+        fields = ["latitude", "longitude", "radius_m", "out_of_zone_policy", "address"]
 
 
 class ProjectSerializer(serializers.ModelSerializer):

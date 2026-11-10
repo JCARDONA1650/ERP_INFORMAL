@@ -78,6 +78,7 @@ class DashboardView(APIView):
                         "longitude": float(site.longitude),
                         "radius_m": site.radius_m,
                         "out_of_zone_policy": site.out_of_zone_policy,
+                        "address": site.address,
                     },
                 }
             )

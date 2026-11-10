@@ -10,7 +10,7 @@ import { ProjectsPage } from './projects-page';
 const page = (results: unknown[]) => ({ count: results.length, next: null, previous: null, results });
 const MONTEGO: Project = {
   id: 1, name: 'Montego', slug: 'montego', active: true, contract_value: '1000.00', contract_currency: 'USD',
-  site: { latitude: '28.500000', longitude: '-81.400000', radius_m: 200, out_of_zone_policy: 'block' },
+  site: { latitude: '28.500000', longitude: '-81.400000', radius_m: 200, out_of_zone_policy: 'block', address: '' },
   supervisors: [5], employees: [3],
 };
 const SUPERVISORS = [{ id: 5, username: 'sup', full_name: 'Sara Sup' }, { id: 6, username: 'otro', full_name: 'Otro Sup' }];
@@ -86,7 +86,7 @@ describe('ProjectsPage', () => {
     const req = http.expectOne((r) => r.method === 'POST');
     expect(req.request.body).toEqual({
       name: 'Torre Norte', contract_value: '0', contract_currency: 'USD',
-      site: { latitude: 28.5, longitude: -81.4, radius_m: 150, out_of_zone_policy: 'block' },
+      site: { latitude: 28.5, longitude: -81.4, radius_m: 150, out_of_zone_policy: 'block', address: '' },
       supervisors: [5], employees: [3],
     });
     req.flush({ ...MONTEGO, id: 2 });
@@ -178,7 +178,7 @@ describe('ProjectsPage', () => {
     listReq().flush(page([MONTEGO]));
   });
 
-  it('el punto movido en el mapa actualiza latitud y longitud', () => {
+  it('el punto movido en el mapa actualiza latitud, longitud y la dirección aproximada', () => {
     setup();
     btn('Editar').click();
     fixture.detectChanges();
@@ -187,5 +187,54 @@ describe('ProjectsPage', () => {
     fixture.detectChanges();
     expect((el.querySelector('input[formControlName="latitude"]') as HTMLInputElement).value).toBe('28.6');
     expect((el.querySelector('input[formControlName="longitude"]') as HTMLInputElement).value).toBe('-81.3');
+    http.expectOne((r) => r.url === '/api/geocode/reverse/' && r.params.get('lat') === '28.6')
+      .flush({ address: 'Calle Falsa 123, Orlando, FL' });
+    fixture.detectChanges();
+    expect(el.querySelector('.address__saved')?.textContent).toContain('Calle Falsa 123');
+  });
+
+  it('busca una dirección, muestra opciones y al elegir una apunta el mapa y guarda la dirección', () => {
+    setup([]);
+    btn('Nuevo proyecto').click();
+    fixture.detectChanges();
+    fill('.project-form input[formControlName="name"]', 'Torre Norte');
+    check('Definir zona');
+    fixture.detectChanges();
+    const q = el.querySelector('#address-q') as HTMLInputElement;
+    q.value = '400 S Orange Ave Orlando';
+    q.dispatchEvent(new Event('input'));
+    btn('Buscar dirección').click();
+    http.expectOne((r) => r.url === '/api/geocode/search/' && r.params.get('q') === '400 S Orange Ave Orlando').flush({
+      results: [{ label: '400 South Orange Avenue, Orlando, Florida', latitude: 28.538336, longitude: -81.379234 }],
+    });
+    fixture.detectChanges();
+    (el.querySelector('.address__list button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect((el.querySelector('input[formControlName="latitude"]') as HTMLInputElement).value).toBe('28.538336');
+    expect(el.querySelector('.address__saved')?.textContent).toContain('400 South Orange Avenue');
+    submit();
+    const req = http.expectOne((r) => r.method === 'POST');
+    expect(req.request.body.site.address).toBe('400 South Orange Avenue, Orlando, Florida');
+    req.flush({ ...MONTEGO, id: 3 });
+    listReq().flush(page([MONTEGO]));
+  });
+
+  it('avisa si la dirección no se encuentra o el servicio falla', () => {
+    setup([]);
+    btn('Nuevo proyecto').click();
+    fixture.detectChanges();
+    check('Definir zona');
+    fixture.detectChanges();
+    const q = el.querySelector('#address-q') as HTMLInputElement;
+    q.value = 'zzzz no existe';
+    q.dispatchEvent(new Event('input'));
+    btn('Buscar dirección').click();
+    http.expectOne((r) => r.url === '/api/geocode/search/').flush({ results: [] });
+    fixture.detectChanges();
+    expect(el.textContent).toContain('No encontramos esa dirección');
+    btn('Buscar dirección').click();
+    http.expectOne((r) => r.url === '/api/geocode/search/').flush({ detail: 'No se pudo consultar el servicio de direcciones.' }, { status: 502, statusText: 'Bad Gateway' });
+    fixture.detectChanges();
+    expect(el.textContent).toContain('servicio de direcciones');
   });
 });

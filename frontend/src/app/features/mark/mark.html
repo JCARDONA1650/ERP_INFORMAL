@@ -21,6 +21,9 @@
 
         @if (context()?.site; as site) {
           <section class="zone" aria-label="Zona de obra">
+            @if (site.address) {
+              <p class="zone__address">📍 {{ site.address }}</p>
+            }
             <app-site-map
               [lat]="site.latitude"
               [lng]="site.longitude"

@@ -11,7 +11,7 @@ const BASE = {
   attendance: { present_today: 3, open_shifts: 1, out_of_zone_today: 1, pending_review: 2 },
   projects: [
     { id: 1, name: 'UNAD', workers: 2, present_today: 3, pending_review: 2,
-      site: { latitude: 28.5, longitude: -81.4, radius_m: 150, out_of_zone_policy: 'block' } },
+      site: { latitude: 28.5, longitude: -81.4, radius_m: 150, out_of_zone_policy: 'block', address: '' } },
   ],
   marks_today: [{ employee: 'Ana', project: 'UNAD', action: 'in', time: '07:00', latitude: 28.5, longitude: -81.4, in_zone: true }],
   hours_last_days: [{ date: '2026-11-09', hours: 8 }, { date: '2026-11-10', hours: 4 }],

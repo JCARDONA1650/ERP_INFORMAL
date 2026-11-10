@@ -74,6 +74,11 @@
 }
 
 .zone {
+  &__address {
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
   display: grid;
   gap: 0.6rem;
   margin-bottom: 1rem;
