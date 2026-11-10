@@ -23,6 +23,42 @@ docker compose exec web python manage.py createsuperuser
 
 La aplicación queda en http://localhost:9000/.
 
+## Despliegue en producción (servidor propio / VPS)
+
+Arquitectura: `nginx` (sirve Angular y hace proxy de `/api/`, `/admin/`, `/static/`) → `web` (Django + waitress) → `db` (PostgreSQL). nginx solo escucha en `127.0.0.1`; el HTTPS lo termina un proxy delante (Caddy, Traefik, etc.).
+
+1. Copiar la plantilla y completar los valores (clave secreta, dominio, contraseña de BD):
+
+   ```bash
+   cp .env.production.example .env
+   ```
+
+2. Construir y levantar (las migraciones se aplican al arrancar `web`; los grupos de roles se crean por migración):
+
+   ```bash
+   docker compose -f docker-compose.prod.yml up -d --build
+   ```
+
+3. Crear el primer superusuario:
+
+   ```bash
+   docker compose -f docker-compose.prod.yml exec web python manage.py createsuperuser
+   ```
+
+4. Proxy HTTPS delante apuntando a `127.0.0.1:8080` (ejemplo con Caddy):
+
+   ```
+   erp.tu-dominio.com {
+       reverse_proxy 127.0.0.1:8080
+   }
+   ```
+
+   Tras comprobar que el HTTPS funciona, puede activarse `DJANGO_HSTS_SECONDS` (p. ej. `31536000`).
+
+**Respaldos:** base de datos con `docker compose -f docker-compose.prod.yml exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > backup.sql`, y copiar el volumen `media_data` (fotos de asistencia).
+
+**Notas:** las fotos solo se sirven por la API autenticada (`/media/` responde 404 en nginx). Estos archivos de despliegue no se han podido construir ni probar en el entorno de desarrollo (sin Docker); validar con un primer despliegue de prueba.
+
 ## Pruebas
 
 ```bash

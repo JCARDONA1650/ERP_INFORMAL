@@ -1,0 +1,52 @@
+# Producción (servidor propio / VPS). Uso:
+#   cp .env.production.example .env   # y completar los valores
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# nginx solo escucha en 127.0.0.1: el HTTPS lo termina un proxy delante (Caddy, Traefik...).
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: erp_informal_db
+    env_file: .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  web:
+    build: .
+    container_name: erp_informal_web
+    env_file: .env
+    environment:
+      # Fuerza producción aunque el .env diga otra cosa.
+      DJANGO_DEBUG: "0"
+    depends_on:
+      db:
+        condition: service_healthy
+    # Aplica migraciones y arranca el servidor de producción (sin recarga ni código montado).
+    command: sh -c "python manage.py migrate --noinput && waitress-serve --listen=0.0.0.0:9000 core.wsgi:application"
+    volumes:
+      - media_data:/app/media
+    expose:
+      - "9000"
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: .
+      dockerfile: deploy/nginx/Dockerfile
+    container_name: erp_informal_nginx
+    depends_on:
+      web:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${HTTP_PORT:-8080}:80"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  media_data:
