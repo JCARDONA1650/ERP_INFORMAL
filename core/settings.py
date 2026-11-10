@@ -46,6 +46,18 @@ CSRF_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_HTTPONLY = True
 
+# Producción detrás de un proxy HTTPS (nginx/Caddy/Traefik). Todo se activa por entorno.
+if os.getenv("DJANGO_BEHIND_PROXY", "0") == "1":
+    # Confía en X-Forwarded-Proto SOLO si el proxy lo fija; el contenedor no se expone directo.
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_SSL_REDIRECT = (not DEBUG) and os.getenv("DJANGO_SSL_REDIRECT", "0") == "1"
+SECURE_REDIRECT_EXEMPT = [r"^api/health/$"]  # el healthcheck interno usa http
+SECURE_HSTS_SECONDS = int(os.getenv("DJANGO_HSTS_SECONDS", "0"))  # 0 = desactivado
+SECURE_HSTS_INCLUDE_SUBDOMAINS = SECURE_HSTS_SECONDS > 0
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "same-origin"
+X_FRAME_OPTIONS = "DENY"
+
 # ───────────────── Aplicaciones ─────────────────
 INSTALLED_APPS = [
     "django.contrib.admin",

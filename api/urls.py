@@ -22,6 +22,7 @@ router.register("finance/incomes", IncomeViewSet, basename="finance-income")
 router.register("finance/expenses", ExpenseViewSet, basename="finance-expense")
 
 urlpatterns = [
+    path("health/", views.HealthView.as_view(), name="api-health"),
     path("auth/login/", views.LoginView.as_view(), name="api-login"),
     path("auth/refresh/", TokenRefreshView.as_view(), name="api-refresh"),
     path("auth/me/", views.MeView.as_view(), name="api-me"),
