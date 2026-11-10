@@ -4,10 +4,11 @@ Aplicación web para automatizar la asistencia (QR, ubicación, foto) y la nómi
 
 ## Estado actual
 
-- Configuración base: Django 5.2, PostgreSQL, Docker Compose.
-- Autenticación: inicio y cierre de sesión, con página de inicio protegida.
-- Dominio y lógica de negocio (Fase 1, sin vistas ni API todavía): trabajadores con historial de tarifas, proyectos con zona de obra, asistencia con QR firmado y geocerca, nómina con ajustes y cierre auditado, finanzas por proyecto y datos de reportes. Cubierto por 83 pruebas.
-- Pendiente: API REST (DRF + JWT) y frontend Angular.
+- Backend: Django 5.2 + PostgreSQL, API REST con DRF y autenticación JWT.
+- Frontend: Angular (login, proyectos, trabajadores, asistencia, nómina, finanzas, reportes).
+- Dominio y lógica de negocio: trabajadores con historial de tarifas, proyectos con zona de obra, asistencia con QR firmado y geocerca, nómina con ajustes y cierre auditado, finanzas por proyecto y reportes de asistencia/nómina/finanzas (Excel y PDF).
+- Pruebas: 207 backend (~96 % de cobertura) y 96 frontend.
+- Despliegue de producción (Docker + nginx) validado en un entorno de prueba aislado.
 
 ## Requisitos
 
@@ -57,7 +58,7 @@ Arquitectura: `nginx` (sirve Angular y hace proxy de `/api/`, `/admin/`, `/stati
 
 **Respaldos:** base de datos con `docker compose -f docker-compose.prod.yml exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > backup.sql`, y copiar el volumen `media_data` (fotos de asistencia).
 
-**Notas:** las fotos solo se sirven por la API autenticada (`/media/` responde 404 en nginx). Estos archivos de despliegue no se han podido construir ni probar en el entorno de desarrollo (sin Docker); validar con un primer despliegue de prueba.
+**Notas:** las fotos solo se sirven por la API autenticada (`/media/` responde 404 en nginx). Estos archivos de despliegue se validaron en un entorno de prueba aislado (proyecto Compose separado, sin tocar los datos de desarrollo): migraciones, nginx, login JWT, redirección a HTTPS detrás de proxy y pruebas automatizadas. Aun así, conviene validar también con el primer despliegue real.
 
 ## Pruebas
 
