@@ -1,18 +1,25 @@
 """Reglas de negocio de asistencia: almuerzo, horas netas y redondeo."""
+from datetime import timedelta
+
+from django.utils import timezone
+
 from .models import ProjectLunchRule
 
-ROUND_STEP = 30
 LEGACY_LUNCH_MINUTES = 60
 LEGACY_LUNCH_THRESHOLD = 300  # bruto > 5 h
 
 
-def round_to_nearest(minutes: int, step: int = ROUND_STEP) -> int:
-    """Redondea al múltiplo de `step` más cercano (la mitad sube)."""
-    minutes = max(0, int(minutes))
-    remainder = minutes % step
-    if remainder < step / 2:
-        return minutes - remainder
-    return minutes + (step - remainder)
+def round_punch_to_hour(moment, *, is_exit: bool):
+    """Redondea una marcación a la hora en punto más cercana (en hora local).
+    En la mitad exacta se favorece al trabajador: el ingreso baja (5:30 → 5:00)
+    y la salida sube (6:30 → 7:00). 5:10 → 5:00 y 6:50 → 7:00."""
+    local = timezone.localtime(moment)
+    base = local.replace(minute=0, second=0, microsecond=0)
+    past = (local - base).total_seconds()
+    half = 30 * 60
+    if past > half or (past == half and is_exit):
+        return base + timedelta(hours=1)
+    return base
 
 
 def lunch_minutes_map() -> dict:
@@ -39,8 +46,9 @@ def configured_lunch_minutes(project, on_date) -> int:
 def net_worked_minutes(attendance, lunch_minutes=None) -> int:
     """Minutos netos de una jornada.
     1) ajuste manual si existe; 2) sin ingreso/salida => 0;
-    3) descuenta almuerzo configurado; sin regla: L-V descuenta 60 min si bruto > 5 h
-    (sábado no descuenta); 4) redondea a 30 min.
+    3) cada marcación se redondea a la hora más cercana (5:10 → 5:00, 6:50 → 7:00);
+    4) descuenta almuerzo configurado; sin regla: L-V descuenta 60 min si bruto > 5 h
+    (sábado no descuenta). Se paga hora trabajada × tarifa: no hay horas extra ni recargos.
     `lunch_minutes` permite pasar el almuerzo ya resuelto (reportes masivos sin
     consultar la base por jornada)."""
     if attendance.manual_minutes is not None:
@@ -48,7 +56,9 @@ def net_worked_minutes(attendance, lunch_minutes=None) -> int:
     if not attendance.check_in or not attendance.check_out:
         return 0
 
-    gross = max(0, int((attendance.check_out - attendance.check_in).total_seconds() // 60))
+    start = round_punch_to_hour(attendance.check_in, is_exit=False)
+    end = round_punch_to_hour(attendance.check_out, is_exit=True)
+    gross = max(0, int((end - start).total_seconds() // 60))
     lunch = (
         lunch_minutes if lunch_minutes is not None
         else configured_lunch_minutes(attendance.project, attendance.date)
@@ -57,7 +67,7 @@ def net_worked_minutes(attendance, lunch_minutes=None) -> int:
         gross -= lunch
     elif attendance.date.weekday() != 5 and gross > LEGACY_LUNCH_THRESHOLD:
         gross -= LEGACY_LUNCH_MINUTES
-    return round_to_nearest(max(0, gross))
+    return max(0, gross)
 
 
 # ───────────────── Registro de marcaciones ─────────────────
@@ -67,7 +77,6 @@ from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
 
 from django.db import models, transaction
-from django.utils import timezone
 
 from projects.models import POLICY_BLOCK
 from projects.services import distance_to_site_m, is_in_zone

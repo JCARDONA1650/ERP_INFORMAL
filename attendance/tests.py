@@ -9,7 +9,7 @@ from projects.models import Project
 from workers.models import Employee
 
 from .models import Attendance, AttendanceScan, ProjectLunchRule
-from .services import net_worked_minutes, round_to_nearest
+from .services import net_worked_minutes, round_punch_to_hour
 
 TZ = ZoneInfo("America/New_York")
 MONDAY = dt.date(2026, 11, 2)
@@ -33,12 +33,24 @@ class BaseCase(TestCase):
 
 
 class RoundingTests(TestCase):
-    def test_redondeo_a_30(self):
-        self.assertEqual(round_to_nearest(14), 0)
-        self.assertEqual(round_to_nearest(15), 30)
-        self.assertEqual(round_to_nearest(44), 30)
-        self.assertEqual(round_to_nearest(45), 60)
-        self.assertEqual(round_to_nearest(-5), 0)
+    def hour(self, h, m, s=0, exit_=False):
+        r = round_punch_to_hour(dt.datetime(2026, 11, 2, h, m, s, tzinfo=TZ), is_exit=exit_)
+        return (r.hour, r.minute)
+
+    def test_redondea_a_la_hora_mas_cercana(self):
+        self.assertEqual(self.hour(5, 10), (5, 0))
+        self.assertEqual(self.hour(5, 29, 59), (5, 0))
+        self.assertEqual(self.hour(5, 31), (6, 0))
+        self.assertEqual(self.hour(18, 50, exit_=True), (19, 0))
+        self.assertEqual(self.hour(18, 20, exit_=True), (18, 0))
+
+    def test_en_la_mitad_exacta_favorece_al_trabajador(self):
+        self.assertEqual(self.hour(5, 30), (5, 0))  # ingreso: baja
+        self.assertEqual(self.hour(18, 30, exit_=True), (19, 0))  # salida: sube
+
+    def test_cruza_el_dia_y_conserva_la_zona_horaria(self):
+        r = round_punch_to_hour(dt.datetime(2026, 11, 2, 23, 50, tzinfo=TZ), is_exit=True)
+        self.assertEqual((r.day, r.hour), (3, 0))
 
 
 class WorkedMinutesTests(BaseCase):
@@ -46,6 +58,21 @@ class WorkedMinutesTests(BaseCase):
         a = self.day(MONDAY, (7, 0), (16, 0))  # 9h bruto -> 8h
         self.assertEqual(a.worked_minutes(), 480)
         self.assertEqual(a.worked_hhmm(), "08:00")
+
+    def test_marcaciones_se_redondean_a_la_hora_antes_de_calcular(self):
+        # 5:10 → 5:00 y 18:50 → 19:00 = 14 h brutas; sin regla de almuerzo descuenta 1 h (L-V, > 5 h)
+        a = self.day(MONDAY, (5, 10), (18, 50))
+        self.assertEqual(a.worked_minutes(), 13 * 60)
+        # con almuerzo configurado de 1 h el resultado es el mismo
+        ProjectLunchRule.objects.create(
+            project=self.project, weekday=0, start_time=dt.time(12), end_time=dt.time(13)
+        )
+        self.assertEqual(net_worked_minutes(a), 13 * 60)
+
+    def test_se_paga_hora_trabajada_sin_recargos(self):
+        # 10 h netas = 10 × tarifa; no hay horas extra aunque la jornada sea larga
+        a = self.day(SATURDAY, (6, 0), (16, 0))
+        self.assertEqual(a.worked_minutes(), 600)
 
     def test_sin_regla_jornada_corta_no_descuenta(self):
         a = self.day(MONDAY, (7, 0), (11, 0))
